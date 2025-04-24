@@ -1,5 +1,22 @@
 applications:
     # The name of this app. Must be unique within a project.
+    cs:
+        # Where the app is located on the filesystem.
+        source:
+            root: "cs"
+
+        # The runtime the application uses.
+        stack: ["crowdsec:1.6.5"]
+
+        # Configuration of the build of the application.
+        build:
+            flavor: composer
+
+        # Hooks into the build and deploy stages.
+        hooks:
+            deploy: |
+                set -e
+                bash scripts/deploy.sh
     eng:
         # Where the app is located on the filesystem.
         source:
