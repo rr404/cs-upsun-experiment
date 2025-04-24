@@ -8,6 +8,11 @@ applications:
         # The runtime the application uses.
         stack: ["crowdsec"]
 
+        mounts:
+            'crowdsec-root':
+                source: local
+                source_path: 'crowdsec-root'
+                
         # Configuration of the build of the application.
         build:
             flavor: none
