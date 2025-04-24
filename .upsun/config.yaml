@@ -6,7 +6,7 @@ applications:
             root: "cs"
 
         # The runtime the application uses.
-        stack: ["crowdsec:1.6.5"]
+        stack: ["crowdsec@1.6.5"]
 
         # Configuration of the build of the application.
         build:
