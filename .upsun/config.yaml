@@ -10,7 +10,7 @@ applications:
 
         # Configuration of the build of the application.
         build:
-            flavor: composer
+            flavor: none
 
         # Hooks into the build and deploy stages.
         hooks:
