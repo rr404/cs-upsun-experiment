@@ -6,7 +6,7 @@ applications:
             root: "cs"
 
         # The runtime the application uses.
-        # stack: ["gettext"]
+        stack: ["gettext"]
 
         mounts:
             'crowdsec':
