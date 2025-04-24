@@ -6,13 +6,19 @@ applications:
             root: "cs"
 
         # The runtime the application uses.
-        stack: ["crowdsec"]
+        stack: ["gettext"]
 
         mounts:
-            'crowdsec-root':
-                source: local
-                source_path: 'crowdsec-root'
-                
+            'crowdsec':
+                source: instance
+                source_path: 'crowdsec'
+            'install':
+                source: instance
+                source_path: 'install'
+            'log':
+                source: instance
+                source_path: 'log'
+
         # Configuration of the build of the application.
         build:
             flavor: none
