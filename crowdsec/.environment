@@ -1,5 +1,10 @@
-export LOG_DIR="${PLATFORM_APP_DIR}/var/log"
-export CROWDSEC_DIR="${PLATFORM_APP_DIR}/crowdsec"
+export VAR_DIR="${PLATFORM_APP_DIR}/var"
+export LOG_DIR="${VAR_DIR}/log"
+export TMP_DIR="${VAR_DIR}/tmp"
+
+export SCRIPTS_DIR="${PLATFORM_APP_DIR}/scripts"
+
+export CROWDSEC_DIR="${PLATFORM_APP_DIR}/etc/crowdsec"
 export CROWDSEC_VERSION="v1.6.8"
 
 export DEPLOY_LOG_FILE="${LOG_DIR}/deploy.log"

@@ -14,15 +14,15 @@ applications:
         #container_profile: BALANCED
 
         mounts:
-            'crowdsec':
+            'etc':
                 source: instance
-                source_path: 'etc/crowdsec'
-            'crowdsec_data':
+                source_path: 'etc'
+            'var':
                 source: instance
-                source_path: 'var/lib/crowdsec/data'
+                source_path: 'var'
             'logpit':
                 source: storage
-                source_path: 'var/log'
+                source_path: 'logpit'
 
         hooks:
             build: |
