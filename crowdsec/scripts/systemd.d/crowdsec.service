@@ -1,0 +1,17 @@
+[Unit]
+Description=CrowdSec Security Engine
+
+[Service]
+WorkingDirectory=/app/etc/crowdsec
+Type=notify
+Environment=LC_ALL=C LANG=C
+ExecStartPre=/app/etc/crowdsec/crowdsec -c /app/etc/crowdsec/config.yaml -t -error
+ExecStart=/app/etc/crowdsec/crowdsec -c /app/etc/crowdsec/config.yaml
+#ExecStartPost=/bin/sleep 0.1
+ExecReload=/app/etc/crowdsec/crowdsec -c /app/etc/crowdsec/config.yaml -t -error
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

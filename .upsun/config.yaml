@@ -1,27 +1,37 @@
 applications:
     # The name of this app. Must be unique within a project.
-    cs:
+    crowdsec:
         # Where the app is located on the filesystem.
         source:
-            root: "cs"
-
+            root: "crowdsec"
         # The runtime the application uses.
         stack: ["gettext"]
+        # Configuration of the build of the application.
+        build:
+            flavor: none
+
+        # Need more RAM than CPU #TODO Select one ?
+        #container_profile: BALANCED
 
         mounts:
             'crowdsec':
                 source: instance
-                source_path: 'crowdsec'
-            'install':
+                source_path: 'etc/crowdsec'
+            'crowdsec_data':
                 source: instance
-                source_path: 'install'
-            'log':
-                source: instance
-                source_path: 'log'
+                source_path: 'var/lib/crowdsec/data'
+            'logpit':
+                source: storage
+                source_path: 'var/log'
 
-        # Configuration of the build of the application.
-        build:
-            flavor: none
+        hooks:
+            build: |
+                set -eu
+                ./scripts/systemd_install.sh
+            deploy: |
+                set -eu
+                .scripts/deploy_crowdsec.sh
+        
 
         # Hooks into the build and deploy stages.
         hooks:

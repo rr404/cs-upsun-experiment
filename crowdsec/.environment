@@ -1,0 +1,5 @@
+export LOG_DIR="${PLATFORM_APP_DIR}/var/log"
+export CROWDSEC_DIR="${PLATFORM_APP_DIR}/crowdsec"
+export CROWDSEC_VERSION="v1.6.8"
+
+export DEPLOY_LOG_FILE="${LOG_DIR}/deploy.log"
