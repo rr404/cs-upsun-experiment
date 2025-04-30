@@ -31,10 +31,3 @@ applications:
             deploy: |
                 set -eu
                 .scripts/deploy_crowdsec.sh
-        
-
-        # Hooks into the build and deploy stages.
-        hooks:
-            deploy: |
-                set -e
-                bash scripts/deploy.sh
