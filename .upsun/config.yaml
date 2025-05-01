@@ -30,4 +30,4 @@ applications:
                 ./scripts/systemd_install.sh
             deploy: |
                 set -eu
-                .scripts/deploy_crowdsec.sh
+                ./scripts/deploy_crowdsec.sh

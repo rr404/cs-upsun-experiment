@@ -9,6 +9,10 @@ fi
 echo "Deploying CrowdSec" >> $DEPLOY_LOG_FILE
 # Define the base directory
 
+mkdir -p $LOG_DIR
+mkdir -p $TMP_DIR
+mkdir -p $CROWDSEC_DIR
+
 cd $TMP_DIR
 wget "https://github.com/crowdsecurity/crowdsec/releases/download/${CROWDSEC_VERSION}/crowdsec-release.tgz"
 tar -xvzf crowdsec-release.tgz
