@@ -35,6 +35,6 @@ applications:
         workers:
             service_crowdsec:
                 commands:
-                start: |
-                    ./scripts/start-crowdsec-service.sh
+                    start: |
+                        ./scripts/start-crowdsec-service.sh
 
