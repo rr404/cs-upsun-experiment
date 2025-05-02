@@ -31,3 +31,10 @@ applications:
             deploy: |
                 set -eu
                 ./scripts/deploy_crowdsec.sh
+        
+        workers:
+            service_crowdsec:
+                commands:
+                start: |
+                    ./scripts/start-crowdsec-service.sh
+
