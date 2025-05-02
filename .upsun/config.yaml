@@ -27,14 +27,84 @@ applications:
         hooks:
             build: |
                 set -eu
-                ./scripts/systemd_install.sh
+                ./scripts/systemd-install.sh
             deploy: |
                 set -eu
-                ./scripts/deploy_crowdsec.sh
+                ./scripts/deploy-crowdsec.sh
         
         workers:
             service_crowdsec:
                 commands:
                     start: |
                         ./scripts/start-crowdsec-service.sh
+    eng:
+        # Where the app is located on the filesystem.
+        source:
+            root: "eng"
 
+        # The runtime the application uses.
+        type: "php:8.3"
+
+        # Configuration of the build of the application.
+        build:
+            flavor: composer
+
+        # Hooks into the build and deploy stages.
+        hooks:
+            deploy: |
+                set -e
+                bash scripts/deploy.sh
+        # The relationships of the application with services or other applications.
+        # The left-hand side is the name of the relationship as it will be exposed
+        # to the application in the PLATFORM_RELATIONSHIPS variable. The right-hand
+        # side is in the form `<service name>:<endpoint name>`.
+        relationships:
+            database: "engdb:mysql"
+
+        # The configuration of app when it is exposed to the web.
+        web:
+            locations:
+                "/":
+                    # The public directory of the app, relative to its root.
+                    root: "wordpress"
+                    # The front-controller script to send non-static requests to.
+                    passthru: "/index.php"
+                    # Wordpress has multiple roots (wp-admin) so the following is required
+                    index:
+                        - "index.php"
+                    # The number of seconds whitelisted (static) content should be cached.
+                    expires: 600
+                    scripts: true
+                    allow: true
+                    rules:
+                        ^/composer\.json:
+                            allow: false
+                        ^/license\.txt$:
+                            allow: false
+                        ^/readme\.html$:
+                            allow: false
+                "/wp-content/cache":
+                    root: "wordpress/wp-content/cache"
+                    scripts: false
+                    allow: false
+                "/wp-content/uploads":
+                    root: "wordpress/wp-content/uploads"
+                    scripts: false
+                    allow: true
+
+        # Runtime dependencies.
+        dependencies:
+            php:
+                wp-cli/wp-cli-bundle: "^2.5.0"
+                psy/psysh: "^0.8.4"
+
+        mounts:
+            "wordpress/wp-content/cache":
+                source: local
+                source_path: "cache"
+            "wordpress/wp-content/uploads":
+                source: local
+                source_path: "uploads"
+            "wordpress/wp-content/wp-cloudflare-super-page-cache":
+                source: local
+                source_path: "wp-cloudflare-page-cache"
