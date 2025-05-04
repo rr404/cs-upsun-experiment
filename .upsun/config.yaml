@@ -5,7 +5,7 @@ applications:
         source:
             root: "crowdsec"
         # The runtime the application uses.
-        stack: ["https://github.com/kampka/nix-flake-crowdsec"]
+        stack: ["crowdsec:1.6.8"]
         # Configuration of the build of the application.
         build:
             flavor: none
