@@ -5,7 +5,7 @@ applications:
         source:
             root: "crowdsec"
         # The runtime the application uses.
-        stack: ["gettext"]
+        stack: ["https://github.com/kampka/nix-flake-crowdsec"]
         # Configuration of the build of the application.
         build:
             flavor: none
@@ -24,19 +24,20 @@ applications:
                 source: storage
                 source_path: 'logpit'
 
-        hooks:
-            build: |
-                set -eu
-                ./scripts/systemd-install.sh
-            deploy: |
-                set -eu
-                ./scripts/deploy-crowdsec.sh
-        
-        workers:
-            service_crowdsec:
-                commands:
-                    start: |
-                        ./scripts/start-crowdsec-service.sh
+        # hooks:
+        #     build: |
+        #         set -eu
+        #         ./scripts/systemd-install.sh
+        #     deploy: |
+        #         set -eu
+        #         ./scripts/deploy-crowdsec.sh
+
+        # No need for now, Workers seem to create and otrher container, ideally the service would sun in the main container
+        # workers:
+        #     service_crowdsec:
+        #         commands:
+        #             start: |
+        #                 ./scripts/start-crowdsec-service.sh
     eng:
         # Where the app is located on the filesystem.
         source:
