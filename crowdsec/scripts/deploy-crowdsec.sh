@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [ ! -f $DEPLOY_LOG_FILE ]; then
     echo "Deploy started at $(date)" > $DEPLOY_LOG_FILE
