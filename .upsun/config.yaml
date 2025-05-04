@@ -102,10 +102,6 @@ applications:
             "wordpress/wp-content/wp-cloudflare-super-page-cache":
                 source: local
                 source_path: "wp-cloudflare-page-cache"
-            'logpit':
-                source: service
-                service: network-log-pit
-                source_path: 'logpit'
      # The name of this app. Must be unique within a project.
     ita:
         # Where the app is located on the filesystem.
@@ -187,10 +183,6 @@ applications:
             "wordpress/wp-content/wp-cloudflare-super-page-cache":
                 source: local
                 source_path: "wp-cloudflare-page-cache"
-            'logpit':
-                source: service
-                service: network-log-pit
-                source_path: 'logpit'
 
 services:
     # The services of the project.
@@ -207,10 +199,6 @@ services:
 
     es:
         type: elasticsearch:7.10
-    
-    services:
-        network-log-pit:
-            type: network-storage:2.0
 
 routes:
     # The routes of the project.
