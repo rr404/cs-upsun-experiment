@@ -5,7 +5,7 @@ applications:
         source:
             root: "crowdsec"
         # The runtime the application uses.
-        stack: ["crowdsec:1.6.8"]
+        stack: ["crowdsec@1.6.8"]
         # Configuration of the build of the application.
         build:
             flavor: none
