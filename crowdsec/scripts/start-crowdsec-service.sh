@@ -16,5 +16,5 @@ echo "Show current services"
 systemctl --user status crowdsec.service
 
 echo "checking CAPI user"
-echo $(head -n2 etc/crowdsec/online_api_credentials.yaml | tail -n1)
+echo $(head -n2 ${CROWDSEC_DIR}/online_api_credentials.yaml | tail -n1)
 
