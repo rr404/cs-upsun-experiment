@@ -204,6 +204,9 @@ routes:
     # The routes of the project.
     # Each route describes how an incoming URL is going
     # to be processed by Upsun.
+    "https://logs.{default}/":
+        type: upstream
+        upstream: "crowdsec:http"
 
     "https://www.eng.{default}/":
         type: upstream
