@@ -54,7 +54,7 @@ applications:
         # side is in the form `<service name>:<endpoint name>`.
         relationships:
             database: "engdb:mysql"
-            syslog: 'logpit:syslog'
+            syslog: 'syslog:syslog'
 
         # The configuration of app when it is exposed to the web.
         web:
@@ -136,7 +136,7 @@ applications:
             database: 'itadb:mysql'
             rediscache: 'redis:redis'
             essearch: 'es:elasticsearch'
-            syslog: 'logpit:syslog'
+            syslog: 'syslog:syslog'
 
         # The configuration of app when it is exposed to the web.
         web:
@@ -202,8 +202,9 @@ services:
     es:
         type: elasticsearch:7.10
 
-    logpit:
-        type: syslog:1.0
+    syslog:
+        type: syslog
+
 
 routes:
     # The routes of the project.
