@@ -203,7 +203,7 @@ services:
         type: elasticsearch:7.10
 
     syslog:
-        type: syslog
+        type: syslog:4
 
 
 routes:
