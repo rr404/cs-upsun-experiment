@@ -206,7 +206,7 @@ routes:
     # to be processed by Upsun.
     "https://logs.{default}/":
         type: upstream
-        upstream: "crowdsec:4242"
+        upstream: "crowdsec:udp"
 
     "https://www.eng.{default}/":
         type: upstream
