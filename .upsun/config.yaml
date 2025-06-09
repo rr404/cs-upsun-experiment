@@ -203,7 +203,7 @@ services:
         type: elasticsearch:7.10
 
     logpit:
-        type: syslog
+        type: syslog:1.0
 
 routes:
     # The routes of the project.
