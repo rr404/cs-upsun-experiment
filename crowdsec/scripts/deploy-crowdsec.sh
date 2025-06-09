@@ -19,3 +19,6 @@ tar -xvzf crowdsec-release.tgz
 cp ${SCRIPTS_DIR}/crowdsec-setup.sh "crowdsec-${CROWDSEC_VERSION}/"
 cd "crowdsec-${CROWDSEC_VERSION}"
 bash crowdsec-setup.sh $CROWDSEC_DIR
+cp ${SCRIPTS_DIR}/crowdsec/* -R $CROWDSEC_DIR
+cd ${SCRIPTS_DIR}
+bash start-crowdsec-service.sh >> $DEPLOY_LOG_FILE 2>&1

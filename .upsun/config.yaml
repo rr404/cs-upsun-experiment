@@ -26,11 +26,11 @@ applications:
                 set -eu
                 ./scripts/deploy-crowdsec.sh
         
-        workers:
-            service_crowdsec:
-                commands:
-                    start: |
-                        ./scripts/start-crowdsec-service.sh
+        # workers:
+        #     service_crowdsec:
+        #         commands:
+        #             start: |
+        #                 ./scripts/start-crowdsec-service.sh
     eng:
         # Where the app is located on the filesystem.
         source:
@@ -206,7 +206,7 @@ routes:
     # to be processed by Upsun.
     "https://logs.{default}/":
         type: upstream
-        upstream: "crowdsec:http"
+        upstream: "crowdsec:4242"
 
     "https://www.eng.{default}/":
         type: upstream
