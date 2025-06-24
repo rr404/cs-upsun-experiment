@@ -5,7 +5,7 @@ applications:
         source:
             root: "crowdsec"
         # The runtime the application uses.
-        stack: ["gettext"]
+        stack: ["gettext", "rsyslog"]
         # Configuration of the build of the application.
         build:
             flavor: none
