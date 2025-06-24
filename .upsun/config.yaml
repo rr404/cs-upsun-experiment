@@ -54,6 +54,7 @@ applications:
         # side is in the form `<service name>:<endpoint name>`.
         relationships:
             database: "engdb:mysql"
+            mainapp: "crowdsec:http"
 
         # The configuration of app when it is exposed to the web.
         web:
