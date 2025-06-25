@@ -1,8 +1,0 @@
-source: http
-listen_addr: 127.0.0.1:8986
-path: /nginx-logs
-auth_type: headers
-headers:
-    cslogfw: totoIsNotDead
-labels:
-  type: nginx

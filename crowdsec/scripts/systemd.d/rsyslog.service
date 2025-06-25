@@ -1,0 +1,10 @@
+[Unit]
+Description=rsyslog
+
+[Service]
+ExecStart=rsyslogd -f /app/cs/etc/rsyslog.conf
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
