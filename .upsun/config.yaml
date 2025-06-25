@@ -18,14 +18,14 @@ applications:
             'cs':
                 source: instance
                 source_path: 'cs'
+            'logpit':
+                source: service
+                service: network-storage
 
         hooks:
             build: |
                 set -eu
                 ./scripts/systemd-install.sh
-                set -x -e
-                nix build "github:rr404/nixpkgs/rsyslog-enabled-imhttp#rsyslog" -o /app/.global/nix-build/rsyslog
-                ln -s /app/.global/nix-build/rsyslog/bin/rsyslog /app/.global/bin/rsyslog
             deploy: |
                 set -eu
                 ./scripts/deploy-crowdsec.sh
@@ -111,6 +111,9 @@ applications:
             "wordpress/wp-content/wp-cloudflare-super-page-cache":
                 source: local
                 source_path: "wp-cloudflare-page-cache"
+            "logpit":
+                source: service
+                service: network-storage
      # The name of this app. Must be unique within a project.
     ita:
         # Where the app is located on the filesystem.
@@ -208,6 +211,9 @@ services:
 
     es:
         type: elasticsearch:7.10
+
+    network-storage:
+        type: network-storage:2.0
 
 routes:
     # The routes of the project.
