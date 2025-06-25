@@ -1,6 +1,6 @@
 applications:
     # The name of this app. Must be unique within a project.
-    crowdsec:
+    crowdsec-security-engine:
         # Where the app is located on the filesystem.
         source:
             root: "crowdsec"
