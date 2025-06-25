@@ -17,14 +17,14 @@ applications:
             'cs':
                 source: instance
                 source_path: 'cs'
-            'logpit':
-                source: storage
-                service: network-storage
-                
+
         hooks:
             build: |
                 set -eu
                 ./scripts/systemd-install.sh
+                set -x -e
+                nix build /app/cs/etc/nix_packages/rsyslog/default.nix -o /app/.global/nix-build/rsyslog
+                ln -s /app/.global/nix-build/rsyslog/bin/rsyslog /app/.global/bin/rsyslog
             deploy: |
                 set -eu
                 ./scripts/deploy-crowdsec.sh
@@ -32,10 +32,6 @@ applications:
             upstream:
                 socket_family: tcp
                 protocol: http
-        
-        relationships:
-            database: "engdb:mysql"
-            mainapp: "crowdsec:http"
 
         # workers:
         #     service_crowdsec:
@@ -114,9 +110,6 @@ applications:
             "wordpress/wp-content/wp-cloudflare-super-page-cache":
                 source: local
                 source_path: "wp-cloudflare-page-cache"
-            'logpit/eng':
-                source: storage
-                service: network-storage
      # The name of this app. Must be unique within a project.
     ita:
         # Where the app is located on the filesystem.
@@ -214,9 +207,6 @@ services:
 
     es:
         type: elasticsearch:7.10
-
-    network-storage:
-        type: network-storage:2.0
 
 routes:
     # The routes of the project.
