@@ -5,7 +5,7 @@ applications:
         source:
             root: "crowdsec"
         # The runtime the application uses.
-        stack: ["gettext", "rsyslog"]
+        stack: ["gettext"]
         # Configuration of the build of the application.
         build:
             flavor: none
@@ -17,7 +17,10 @@ applications:
             'cs':
                 source: instance
                 source_path: 'cs'
-
+            'logpit':
+                source: storage
+                service: network-storage
+                
         hooks:
             build: |
                 set -eu
@@ -107,6 +110,9 @@ applications:
             "wordpress/wp-content/wp-cloudflare-super-page-cache":
                 source: local
                 source_path: "wp-cloudflare-page-cache"
+            'logpit/eng':
+                source: storage
+                service: network-storage
      # The name of this app. Must be unique within a project.
     ita:
         # Where the app is located on the filesystem.
@@ -204,6 +210,9 @@ services:
 
     es:
         type: elasticsearch:7.10
+
+    network-storage:
+        type: network-storage:2.0
 
 routes:
     # The routes of the project.
