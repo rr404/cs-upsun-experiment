@@ -25,7 +25,11 @@ applications:
             deploy: |
                 set -eu
                 ./scripts/deploy-crowdsec.sh
-        
+        web:
+            upstream:
+                socket_family: tcp
+                protocol: http
+
         # workers:
         #     service_crowdsec:
         #         commands:
