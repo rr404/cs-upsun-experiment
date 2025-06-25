@@ -36,7 +36,6 @@ applications:
         relationships:
             database: "engdb:mysql"
             mainapp: "crowdsec:http"
-            network-storage: "network-storage:storage"
 
         # workers:
         #     service_crowdsec:
@@ -67,7 +66,6 @@ applications:
         relationships:
             database: "engdb:mysql"
             mainapp: "crowdsec:http"
-            network-storage: "network-storage:storage"
 
         # The configuration of app when it is exposed to the web.
         web:
