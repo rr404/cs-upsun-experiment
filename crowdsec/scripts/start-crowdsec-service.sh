@@ -17,14 +17,14 @@ echo $(head -n2 ${CROWDSEC_DIR}/online_api_credentials.yaml | tail -n1)
 
 
 
-echo "Activating rsyslog with user"
-systemctl --user enable rsyslog.service
+# echo "Activating rsyslog with user"
+# systemctl --user enable rsyslog.service
 
-echo "Starting rsyslog with user"
-systemctl --user start rsyslog.service
+# echo "Starting rsyslog with user"
+# systemctl --user start rsyslog.service
+
+# # echo "Show current services"
+# # systemctl --user
 
 # echo "Show current services"
-# systemctl --user
-
-echo "Show current services"
-systemctl --user status rsyslog.service
+# systemctl --user status rsyslog.service

@@ -2,7 +2,7 @@
 Description=rsyslog
 
 [Service]
-ExecStart=/app/.global/nix-env/root/bin/rsyslogd -f /app/cs/etc/rsyslog.conf
+ExecStart=/app/.global/nix-env/root/bin/rsyslogd -f /app/cs/etc/rsyslogd.conf
 Restart=always
 RestartSec=60
 
