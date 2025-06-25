@@ -24,7 +24,7 @@ applications:
                 set -eu
                 ./scripts/systemd-install.sh
                 set -x -e
-                nix build "github:rr404/nixpkgs/06a720bd815d2d94bed9d2c20dc7bf3f0ceee596#rsyslog" -o /app/.global/nix-build/rsyslog
+                nix build "github:rr404/nixpkgs/rsyslog-enabled-imhttp#rsyslog" -o /app/.global/nix-build/rsyslog
                 ln -s /app/.global/nix-build/rsyslog/bin/rsyslog /app/.global/bin/rsyslog
             deploy: |
                 set -eu
