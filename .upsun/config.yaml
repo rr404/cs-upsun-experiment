@@ -19,7 +19,7 @@ applications:
                 source_path: 'cs'
             'logpit':
                 source: storage
-                service: network-storage
+                service: logpitStorage
                 
         hooks:
             build: |
@@ -112,7 +112,7 @@ applications:
                 source_path: "wp-cloudflare-page-cache"
             'logpit/eng':
                 source: storage
-                service: network-storage
+                service: logpitStorage
      # The name of this app. Must be unique within a project.
     ita:
         # Where the app is located on the filesystem.
@@ -211,7 +211,7 @@ services:
     es:
         type: elasticsearch:7.10
 
-    network-storage:
+    logpitStorage:
         type: network-storage:2.0
 
 routes:
