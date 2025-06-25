@@ -23,8 +23,7 @@ applications:
                 set -eu
                 ./scripts/systemd-install.sh
                 set -x -e
-                mkdir -p ./scripts/nix_packages/rsyslog/
-                nix-build ./scripts/nix_packages/rsyslog/ -o /app/.global/nix-build/rsyslog
+                nix build "github:NixOS/nixpkgs/nixos-25.05#rsyslog" -o /app/.global/nix-build/rsyslog
                 ln -s /app/.global/nix-build/rsyslog/bin/rsyslog /app/.global/bin/rsyslog
             deploy: |
                 set -eu
