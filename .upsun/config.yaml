@@ -1,6 +1,7 @@
 applications:
     # The name of this app. Must be unique within a project.
-    crowdsec-security-engine:
+    crowdsec:
+        type: composable:25.05
         # Where the app is located on the filesystem.
         source:
             root: "crowdsec"
@@ -61,7 +62,7 @@ applications:
         # side is in the form `<service name>:<endpoint name>`.
         relationships:
             database: "engdb:mysql"
-            mainapp: "crowdsec-security-engine:http"
+            mainapp: "crowdsec:http"
 
         # The configuration of app when it is exposed to the web.
         web:
@@ -214,7 +215,7 @@ routes:
     # to be processed by Upsun.
     "https://logs.{default}/":
         type: upstream
-        upstream: "crowdsec-security-engine:http"
+        upstream: "crowdsec:http"
         cache:
             enabled: false
 
