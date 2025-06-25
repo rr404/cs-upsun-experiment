@@ -208,6 +208,8 @@ routes:
     "https://logs.{default}/":
         type: upstream
         upstream: "crowdsec:http"
+        cache:
+            enabled: false
 
     "https://www.eng.{default}/":
         type: upstream
