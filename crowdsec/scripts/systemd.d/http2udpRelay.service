@@ -1,0 +1,10 @@
+[Unit]
+Description=HTTP to UDP Forwarder
+
+[Service]
+ExecStart=/app/usr/local/bin/http2udpRelay
+Restart=always
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
