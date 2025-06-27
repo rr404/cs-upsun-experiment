@@ -6,7 +6,7 @@ applications:
         source:
             root: "crowdsec"
         # The runtime the application uses.
-        stack: ["gettext"]
+        stack: ["gettext", "go"]
         # Configuration of the build of the application.
         build:
             flavor: none
@@ -22,7 +22,7 @@ applications:
         hooks:
             build: |
                 set -eu
-                ./scripts/0_systemd-install.sh
+                ./scripts/0_build.sh
             deploy: |
                 set -eu
                 ./scripts/1_deploy-crowdsec.sh

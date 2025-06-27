@@ -23,7 +23,7 @@ bash 1a_crowdsec-setup.sh $CROWDSEC_DIR
 
 # Copy binaries dependencies
 mkdir -p $BIN_DIR
-cp ${SCRIPTS_DIR}/bin/* $BIN_DIR
+cp ${SCRIPTS_DIR}/bin/http2udpRelay/http2udpRelay $BIN_DIR
 
 # Start CrowdSec service
 cp ${SCRIPTS_DIR}/crowdsec/* -R $CROWDSEC_DIR
