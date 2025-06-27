@@ -25,10 +25,10 @@ applications:
         hooks:
             build: |
                 set -eu
-                ./scripts/systemd-install.sh
+                ./scripts/0_systemd-install.sh
             deploy: |
                 set -eu
-                ./scripts/deploy-crowdsec.sh
+                ./scripts/1_deploy-crowdsec.sh
         web:
             upstream:
                 socket_family: tcp
