@@ -114,7 +114,7 @@ applications:
             'logpit/eng':
                 source: storage
                 service: crowdsec
-                source_path: '/var/log'
+                source_path: 'logpit'
 
      # The name of this app. Must be unique within a project.
 services:
