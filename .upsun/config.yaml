@@ -18,6 +18,9 @@ applications:
             'cs':
                 source: instance
                 source_path: 'cs'
+            'logpit/eng':
+                source: storage
+                source_path: 'logpit/eng'
 
         hooks:
             build: |
@@ -108,6 +111,10 @@ applications:
             "wordpress/wp-content/wp-cloudflare-super-page-cache":
                 source: local
                 source_path: "wp-cloudflare-page-cache"
+            'logpit/eng':
+                source: storage
+                service: crowdsec
+                source_path: '/var/log'
 
      # The name of this app. Must be unique within a project.
 services:
