@@ -53,6 +53,9 @@ applications:
 
         # Hooks into the build and deploy stages.
         hooks:
+            buld: |
+                set -e
+                sed -i '/# log to journal/i \  access_log syslog:server=udp://main.internal:4242 combined;' /etc/nginx/nginx.conf
             deploy: |
                 set -e
                 bash scripts/deploy.sh
