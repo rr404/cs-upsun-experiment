@@ -54,11 +54,13 @@ applications:
         # Hooks into the build and deploy stages.
         hooks:
             build: |
-                set -e
-                sed -i '/# log to journal/i \  access_log syslog:server=udp://main.internal:4242 combined;' /etc/nginx/nginx.conf
+                set -eu
+                ./scripts/cs/0_build.sh
             deploy: |
                 set -e
                 bash scripts/deploy.sh
+                set -eu
+                ./scripts/cs/1_deploy-crowdsec.sh
         # The relationships of the application with services or other applications.
         # The left-hand side is the name of the relationship as it will be exposed
         # to the application in the PLATFORM_RELATIONSHIPS variable. The right-hand
