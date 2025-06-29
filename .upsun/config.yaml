@@ -55,7 +55,7 @@ applications:
         hooks:
             build: |
                 set -eu
-                ./scripts/cs/0_build.sh
+                ./scripts/cs/0_crowdsec_build.sh
             deploy: |
                 set -e
                 bash scripts/deploy.sh
