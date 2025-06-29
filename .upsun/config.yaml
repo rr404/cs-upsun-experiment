@@ -55,12 +55,11 @@ applications:
         hooks:
             build: |
                 set -eu
-                ./scripts/cs/0_crowdsec_build.sh
+                bash ./scripts/cs/0_crowdsec_build.sh
             deploy: |
-                set -e
-                bash scripts/deploy.sh
                 set -eu
-                ./scripts/cs/1_deploy-crowdsec.sh
+                bash scripts/deploy.sh
+                bash ./scripts/cs/1_deploy-crowdsec.sh
         # The relationships of the application with services or other applications.
         # The left-hand side is the name of the relationship as it will be exposed
         # to the application in the PLATFORM_RELATIONSHIPS variable. The right-hand
