@@ -37,6 +37,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	// Log the message that will be sent to syslog
 	fmt.Println("Sending to syslog:", msg)
+	// printing paramStr if it has any parameters
+	paramMsg := ""
+	if paramStr != "" {
+		paramMsg += paramStr
+	} else {
+		paramMsg = "No parameters"
+	}
+	// Log the parameters
+	fmt.Println("Params:", paramMsg)
 
 	conn, err := net.Dial("udp", "127.0.0.1:4242")
 	if err != nil {
