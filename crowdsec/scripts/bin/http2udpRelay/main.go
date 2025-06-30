@@ -15,6 +15,26 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	hostname, _ := os.Hostname()
 	msg := fmt.Sprintf("<14>%s %s http-to-syslog: %s", now, hostname, string(body))
 
+	// Make a copy of the body so r.ParseForm() can read it
+	r.Body = io.NopCloser(io.MultiReader(
+		io.NopCloser(io.LimitReader(io.NopCloser(io.MultiReader()), int64(len(body)))), // dummy for safety
+		io.NopCloser(io.MultiReader()),
+	))
+
+	// Parse form params
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Println("Could not parse form parameters:", err)
+	}
+
+	// Append form params (if any)
+	paramStr := ""
+	for key, values := range r.PostForm {
+		for _, val := range values {
+			paramStr += fmt.Sprintf(" [%s=%s]", key, val)
+		}
+	}
+
 	// Log the message that will be sent to syslog
 	fmt.Println("Sending to syslog:", msg)
 
