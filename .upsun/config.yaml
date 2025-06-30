@@ -6,7 +6,7 @@ applications:
         source:
             root: "crowdsec"
         # The runtime the application uses.
-        stack: ["gettext", "go", "rsyslog", "netcat", "gnumake"]
+        stack: ["gettext", "go", "rsyslog", "netcat", "gnumake", "tcpdump"]
         # Configuration of the build of the application.
         build:
             flavor: none
