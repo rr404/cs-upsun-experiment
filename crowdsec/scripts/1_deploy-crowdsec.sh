@@ -15,10 +15,17 @@ mkdir -p $CROWDSEC_DIR
 
 # Download and setup CrowdSec
 cd $TMP_DIR
-wget "https://github.com/crowdsecurity/crowdsec/releases/download/${CROWDSEC_VERSION}/crowdsec-release.tgz"
+#wget "https://github.com/crowdsecurity/crowdsec/releases/download/${CROWDSEC_VERSION}/crowdsec-release.tgz"
+git clone https://github.com/crowdsecurity/crowdsec.git -b http-datasource-get-head
+cd crowdsec
+make release BUILD_RE2_WASM=1
+cd ..
+cp crowdsec/crowdsec-release.tgz .
 tar -xvzf crowdsec-release.tgz
-cp ${SCRIPTS_DIR}/1a_crowdsec-setup.sh "crowdsec-${CROWDSEC_VERSION}/"
-cd "crowdsec-${CROWDSEC_VERSION}"
+cp ${SCRIPTS_DIR}/1a_crowdsec-setup.sh "crowdsec-*/"
+#cp ${SCRIPTS_DIR}/1a_crowdsec-setup.sh "crowdsec-${CROWDSEC_VERSION}/"
+#cd "crowdsec-${CROWDSEC_VERSION}"
+cd "crowdsec-*"
 bash 1a_crowdsec-setup.sh $CROWDSEC_DIR
 
 # Copy binaries dependencies

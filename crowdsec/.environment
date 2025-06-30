@@ -7,6 +7,6 @@ export TMP_DIR="${VAR_DIR}/tmp"
 export SCRIPTS_DIR="${PLATFORM_APP_DIR}/scripts"
 
 export CROWDSEC_DIR="${PLATFORM_APP_DIR}/cs/etc/crowdsec"
-export CROWDSEC_VERSION="v1.6.8"
+export CROWDSEC_VERSION="v1.6.9"
 
 export DEPLOY_LOG_FILE="${LOG_DIR}/deploy.log"
