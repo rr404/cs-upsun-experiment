@@ -17,7 +17,7 @@ mkdir -p $CROWDSEC_DIR
 cd $TMP_DIR
 wget "https://github.com/crowdsecurity/crowdsec/releases/download/${CROWDSEC_VERSION}/crowdsec-release.tgz"
 tar -xvzf crowdsec-release.tgz
-cp ${SCRIPTS_DIR}/crowdsec-setup.sh "crowdsec-${CROWDSEC_VERSION}/"
+cp ${SCRIPTS_DIR}/1a_crowdsec-setup.sh "crowdsec-${CROWDSEC_VERSION}/"
 cd "crowdsec-${CROWDSEC_VERSION}"
 bash 1a_crowdsec-setup.sh $CROWDSEC_DIR
 
