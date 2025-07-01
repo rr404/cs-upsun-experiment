@@ -61,8 +61,4 @@ else
     echo "CrowdSec is already installed with version ${CROWDSEC_VERSION}${REINSTALL_SUFFIX}. Skipping installation." >> $DEPLOY_LOG_FILE
 fi
 
-# Copy binaries dependencies
-mkdir -p $BIN_DIR
-cp ${SCRIPTS_DIR}/bin/http2udpRelay/http2udpRelay $BIN_DIR
-
 

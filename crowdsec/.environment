@@ -1,3 +1,36 @@
+####################################################################
+### CUSTOMISATION SECTION
+####################################################################
+
+### CrowdSec Security Stack Setup ######################################
+export CROWDSEC_VERSION="v1.6.9"
+# Only if you want to force the re-installation of crowdsec
+ # put a unique string the force mecanism will check if CROWDSEC_VERSION+REINSTALL_SUFFIX already exists
+ # example: timestamp or date "2025-07-01" or "2027-07-01-secondForce"
+export REINSTALL_SUFFIX=""
+
+# Define Bouncer to install
+# Available bouncers: cloudflare, fastly
+export BOUNCER_TYPE="cloudflare"
+
+### Cloudflare Bouncer Setup ######################################
+# If you are using Cloudflare, you need to set those variables.
+## CF doc: https://doc.crowdsec.net/u/bouncers/cloudflare-workers
+
+## API tokens: one or multiple separated by commas "token1,token2"
+## Create Tokens with those rights: https://dash.cloudflare.com/profile/api-tokens?permissionGroupKeys=%5B%7B%22key%22%3A%22account_settings%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22challenge_widgets%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22user_details%22%2C%22type%22%3A%22read%22%7D%2C%7B%22key%22%3A%22workers_kv_storage%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_routes%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22workers_scripts%22%2C%22type%22%3A%22edit%22%7D%2C%7B%22key%22%3A%22zone%22%2C%22type%22%3A%22read%22%7D%2C%20%7B%22key%22%3A%20%22dns%22%2C%20%22type%22%3A%22read%22%7D%2C%20%7B%22key%22%3A%22d1%22%2C%20%22type%22%3A%22edit%22%7D%5D&name=
+CLOUDFLARE_API_TOKENS=""
+
+### Fastly Bouncer Setup ######################################
+# If you are using Fastly, you need to set those variables.
+## Fastly doc: https://doc.crowdsec.net/u/bouncers/fastly
+
+## API tokens: one or multiple separated by commas "token1,token2"
+FASTLY_API_TOKENS=""
+
+####################################################################
+### DO NOT EDIT THIS SECTION MANUALLY
+####################################################################
 export BIN_DIR="${PLATFORM_APP_DIR}/cs/usr/local/bin"
 
 export VAR_DIR="${PLATFORM_APP_DIR}/cs/var"
@@ -6,11 +39,6 @@ export TMP_DIR="${VAR_DIR}/tmp"
 
 export SCRIPTS_DIR="${PLATFORM_APP_DIR}/scripts"
 
-export CROWDSEC_DIR="${PLATFORM_APP_DIR}/cs/etc/crowdsec"
-export CROWDSEC_VERSION="v1.6.9"
-# Only if you want to force the re-installation of crowdsec
- # put a unique string the force mecanism will check if CROWDSEC_VERSION+REINSTALL_SUFFIX already exists
- # example: timestamp or date "2025-07-01" or "2027-07-01-secondForce"
-export REINSTALL_SUFFIX=""
-
 export DEPLOY_LOG_FILE="${LOG_DIR}/deploy.log"
+
+export CROWDSEC_DIR="${PLATFORM_APP_DIR}/cs/etc/crowdsec"
