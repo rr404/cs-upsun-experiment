@@ -8,5 +8,9 @@ export SCRIPTS_DIR="${PLATFORM_APP_DIR}/scripts"
 
 export CROWDSEC_DIR="${PLATFORM_APP_DIR}/cs/etc/crowdsec"
 export CROWDSEC_VERSION="v1.6.9"
+# Only if you want to force the re-installation of crowdsec
+ # put a unique string the force mecanism will check if CROWDSEC_VERSION+REINSTALL_SUFFIX already exists
+ # example: timestamp or date "2025-07-01" or "2027-07-01-secondForce"
+export REINSTALL_SUFFIX=""
 
 export DEPLOY_LOG_FILE="${LOG_DIR}/deploy.log"
