@@ -7,7 +7,7 @@ BOUNCER="crowdsec-cloudflare-worker-bouncer"
 BOUNCER_PREFIX=$(echo "$BOUNCER" | sed 's/crowdsec-/cs-/g')
 
 # This is a library of functions that can be sourced by other scripts
-# to install and configure bouncers.
+# to install and configure bouncers for v1 specs in non-sudo environment.
 #
 # While not requiring bash, it is not strictly POSIX-compliant because
 # it uses local variables, but it should work with every modern shell.
@@ -54,24 +54,34 @@ require() {
     [ "$#" -eq 0 ] || require "$@"
 }
 
-# Use environment-specific paths if available, otherwise fall back to defaults
+# Use environment-specific paths for non-sudo /app/cs environment
 # shellcheck disable=SC2034
 {
 SERVICE="$BOUNCER.service"
-SERVICE_MODE="${SERVICE_MODE:-}"
-BIN_PATH_INSTALLED="${BIN_PATH_INSTALLED:-${BIN_DIR:-/usr/local/bin}/$BOUNCER}"
+SERVICE_MODE="${SERVICE_MODE:-user}"
+# Use /app/cs paths for non-sudo environment
+BIN_PATH_INSTALLED="${BIN_PATH_INSTALLED:-${BIN_DIR:-/app/cs/bin}/$BOUNCER}"
 BIN_PATH="./$BOUNCER"
-CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/etc/crowdsec}/bouncers}"
+CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs}/bouncers}"
 CONFIG_FILE="$BOUNCER.yaml"
 CONFIG="$CONFIG_DIR/$CONFIG_FILE"
-SYSTEMD_PATH_FILE="${SYSTEMD_PATH_FILE:-/etc/systemd/system/$SERVICE}"
+# Use user systemd path instead of system
+SYSTEMD_PATH_FILE="${SYSTEMD_PATH_FILE:-$HOME/.config/systemd/user/$SERVICE}"
 }
 
 assert_root() {
-    #shellcheck disable=SC2312
-    if [ "$(id -u)" -ne 0 ]; then
-        msg warn "Running without root privileges - some operations may be limited"
-        # Don't exit, just warn since we're in a non-sudo environment
+    # In non-sudo /app/cs environment, just validate we have write access
+    if [ ! -w "$(dirname "$BIN_PATH_INSTALLED")" ] 2>/dev/null; then
+        mkdir -p "$(dirname "$BIN_PATH_INSTALLED")" 2>/dev/null || {
+            msg err "Cannot write to binary directory: $(dirname "$BIN_PATH_INSTALLED")"
+            exit 1
+        }
+    fi
+    if [ ! -w "$(dirname "$CONFIG")" ] 2>/dev/null; then
+        mkdir -p "$(dirname "$CONFIG")" 2>/dev/null || {
+            msg err "Cannot write to config directory: $(dirname "$CONFIG")"
+            exit 1
+        }
     fi
 }
 
@@ -139,8 +149,8 @@ set_api_key() {
     # if we can't set the key, the user will take care of it
     ret=0
 
-    # Use the specific cscli path if available
-    cscli_cmd="${CROWDSEC_DIR:-/etc/crowdsec}/cscli"
+    # Use the specific cscli path for /app/cs environment
+    cscli_cmd="${CROWDSEC_DIR:-/app/cs}/cscli"
     if [ ! -x "$cscli_cmd" ]; then
         cscli_cmd="cscli"
     fi
@@ -161,7 +171,7 @@ set_api_key() {
             api_key="<API_KEY>"
             ret=1
         else
-            msg succ "API Key successfully created"
+            msg succ "API Key successfully created for bouncer: $bouncer_id"
             echo "$bouncer_id" > "$CONFIG.id"
         fi
     else
