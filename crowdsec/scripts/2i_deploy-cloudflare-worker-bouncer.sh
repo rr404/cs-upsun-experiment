@@ -2,18 +2,19 @@
 
 echo "Deploying Cloudflare Bouncer"
 
-# Source the environment variables first
+# Pre-requisites sourcing and variables setup
+## Source the environment variables first
 if [ -f "${PLATFORM_APP_DIR}/.environment" ]; then
     source "${PLATFORM_APP_DIR}/.environment"
 fi
 
-# Ensure TMP_DIR is available for the script
+## Ensure TMP_DIR is available for the script
 if [ -z "${TMP_DIR:-}" ]; then
     TMP_DIR="/tmp"
 fi
 
-# Source the bouncer helper functions
-BOUNCER_HELPER="${SCRIPTS_DIR}/_bouncer_utils_cloudflare-worker-bouncer.sh"
+## Source the bouncer helper functions
+BOUNCER_HELPER="$(dirname "$0")/_utils_cloudflare-worker-bouncer.sh"
 
 if [ ! -f "$BOUNCER_HELPER" ]; then
     echo "Error: Bouncer helper script not found at $BOUNCER_HELPER" >&2
@@ -22,12 +23,13 @@ fi
 
 source "$BOUNCER_HELPER"
 
-# Set variables for the bouncer installation
+## Set variables for the bouncer installation
 CF_BOUNCER_VERSION_MIN="v0.0.14"
 CF_BOUNCER_VERSION="${CF_BOUNCER_VERSION:-${CF_BOUNCER_VERSION_MIN}}"
 DOWNLOAD_URL="https://github.com/crowdsecurity/cs-cloudflare-worker-bouncer/releases/download/${CF_BOUNCER_VERSION}/${BOUNCER}-linux-amd64.tgz"
 
-# Function: Download and extract the bouncer release
+# Cloudflare Worker-Bouncer specific functions
+## Function: Download and extract the bouncer release
 download_bouncer_release() {
     msg info "=== Downloading ${BOUNCER} ${CF_BOUNCER_VERSION} release ==="
     
@@ -58,7 +60,7 @@ download_bouncer_release() {
     msg succ "Release downloaded and extracted successfully"
 }
 
-# Function: Install binary and setup initial config
+## Function: Install binary and setup initial config
 install_bouncer_binary() {
     msg info "=== Installing binary and initial configuration ==="
     
@@ -81,7 +83,7 @@ install_bouncer_binary() {
     fi
 }
 
-# Function: Create API key with CrowdSec
+## Function: Create API key with CrowdSec
 create_api_key() {
     msg info "=== Creating CrowdSec API key ==="
     
@@ -94,7 +96,7 @@ create_api_key() {
     fi
 }
 
-# Function: Update config with Cloudflare tokens and LAPI settings
+## Function: Update config with Cloudflare tokens and LAPI settings
 update_bouncer_config() {
     msg info "=== Updating configuration with tokens and parameters ==="
     
@@ -137,7 +139,7 @@ update_bouncer_config() {
     msg succ "Configuration updated successfully"
 }
 
-# Function: Test the final configuration
+## Function: Test the final configuration
 test_bouncer_config() {
     msg info "=== Testing final configuration ==="
     
@@ -157,7 +159,7 @@ test_bouncer_config() {
     fi
 }
 
-# Function: Display deployment summary
+## Function: Display deployment summary
 show_deployment_summary() {
     msg info "=== Deployment Summary ==="
     msg info "Configuration file: $CONFIG"
