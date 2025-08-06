@@ -75,7 +75,7 @@ register_bouncer() {
     bouncer_name="${1:-$BOUNCER_PREFIX-$(date +%s)}"
     
     # Use the specific cscli path for /app/cs environment
-    cscli_cmd="${CROWDSEC_DIR:-/app/cs}/cscli"
+    cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
     if [ ! -x "$cscli_cmd" ]; then
         cscli_cmd="cscli"
     fi
@@ -130,7 +130,7 @@ delete_bouncer() {
     fi
     
     # Use the specific cscli path for /app/cs environment
-    cscli_cmd="${CROWDSEC_DIR:-/app/cs}/cscli"
+    cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
     if [ ! -x "$cscli_cmd" ]; then
         cscli_cmd="cscli"
     fi

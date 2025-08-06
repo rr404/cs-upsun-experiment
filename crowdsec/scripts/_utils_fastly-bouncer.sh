@@ -26,13 +26,13 @@ BOUNCER_PREFIX=$(echo "$BOUNCER" | sed 's/crowdsec-/cs-/g')
 SERVICE="$BOUNCER.service"
 SERVICE_MODE="${SERVICE_MODE:-user}"
 # Fastly bouncer uses Python/pip installation, so no binary path needed
-CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs}/bouncers}"
+CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/bouncers}"
 CONFIG_FILE="$BOUNCER.yaml"
 CONFIG="$CONFIG_DIR/$CONFIG_FILE"
 # Use user systemd path instead of system
 SYSTEMD_PATH_FILE="${SYSTEMD_PATH_FILE:-$HOME/.config/systemd/user/$SERVICE}"
 # Python virtual environment path
-VENV_PATH="${VENV_PATH:-${CROWDSEC_DIR:-/app/cs}/venv}"
+VENV_PATH="${VENV_PATH:-${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/venv}"
 }
 
 # Check if pip and python are available
@@ -162,7 +162,7 @@ set_fastly_lapi_url() {
     require 'CONFIG'
     local port cscli_cmd
     
-    cscli_cmd="${CROWDSEC_DIR:-/etc/crowdsec}/cscli"
+    cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
     if [ ! -x "$cscli_cmd" ]; then
         cscli_cmd="cscli"
     fi

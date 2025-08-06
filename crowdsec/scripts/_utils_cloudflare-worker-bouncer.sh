@@ -28,7 +28,7 @@ SERVICE_MODE="${SERVICE_MODE:-user}"
 # Use /app/cs paths for non-sudo environment
 BIN_PATH_INSTALLED="${BIN_PATH_INSTALLED:-${BIN_DIR:-/app/cs/bin}/$BOUNCER}"
 BIN_PATH="./$BOUNCER"
-CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs}/bouncers}"
+CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/bouncers}"
 CONFIG_FILE="$BOUNCER.yaml"
 CONFIG="$CONFIG_DIR/$CONFIG_FILE"
 # Use user systemd path instead of system
@@ -121,7 +121,7 @@ set_local_port() {
     require 'CONFIG'
     local port cscli_cmd
     
-    cscli_cmd="${CROWDSEC_DIR:-/etc/crowdsec}/cscli"
+    cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
     if [ ! -x "$cscli_cmd" ]; then
         cscli_cmd="cscli"
     fi
@@ -154,7 +154,7 @@ set_local_lapi_url() {
         exit 1
     fi
     
-    cscli_cmd="${CROWDSEC_DIR:-/etc/crowdsec}/cscli"
+    cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
     if [ ! -x "$cscli_cmd" ]; then
         cscli_cmd="cscli"
     fi
