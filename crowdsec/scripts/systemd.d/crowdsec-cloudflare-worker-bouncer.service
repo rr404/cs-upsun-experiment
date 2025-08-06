@@ -1,0 +1,17 @@
+[Unit]
+Description=CrowdSec Cloudflare Worker Bouncer
+After=crowdsec.service
+Requires=crowdsec.service
+
+[Service]
+WorkingDirectory=/app/cs/bin
+Type=exec
+Environment=LC_ALL=C LANG=C
+ExecStartPre=/app/cs/bin/crowdsec-cloudflare-worker-bouncer -c /app/cs/etc/crowdsec/bouncers/crowdsec-cloudflare-worker-bouncer.yaml -t
+ExecStart=/app/cs/bin/crowdsec-cloudflare-worker-bouncer -c /app/cs/etc/crowdsec/bouncers/crowdsec-cloudflare-worker-bouncer.yaml
+Restart=always
+RestartSec=60
+User=%i
+
+[Install]
+WantedBy=multi-user.target

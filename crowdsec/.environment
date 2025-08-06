@@ -7,6 +7,7 @@ export CROWDSEC_VERSION="v1.6.9"
 # Only if you want to force the re-installation of crowdsec
  # put a unique string the force mecanism will check if CROWDSEC_VERSION+REINSTALL_SUFFIX already exists
  # example: timestamp or date "2025-07-01" or "2027-07-01-secondForce"
+ # It will be used to name the lock file
 export REINSTALL_SUFFIX=""
 
 ### Cloudflare Bouncer Setup ######################################
