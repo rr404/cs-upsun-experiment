@@ -182,3 +182,30 @@ upgrade_bin() {
     rm -f "$BIN_PATH_INSTALLED"
     install -v -m 0755 -D "$BIN_PATH" "$BIN_PATH_INSTALLED"
 }
+
+# Generate Cloudflare Worker configuration and deploy to Cloudflare
+generate_cloudflare_worker() {
+    require 'CONFIG' 'BIN_PATH_INSTALLED'
+    local cloudflare_tokens
+    
+    cloudflare_tokens="${CLOUDFLARE_API_TOKENS:-}"
+    if [ -z "$cloudflare_tokens" ]; then
+        msg warn "CLOUDFLARE_API_TOKENS not set - skipping Worker deployment"
+        return 1
+    fi
+    
+    msg info "Generating Cloudflare Worker configuration and deploying to Cloudflare..."
+    
+    # Remove existing config to force regeneration
+    rm -f "$CONFIG"
+    
+    # Generate config and deploy Worker to Cloudflare
+    if "$BIN_PATH_INSTALLED" -g "$cloudflare_tokens" -o "$CONFIG" 2>/dev/null; then
+        chmod 0600 "$CONFIG"
+        msg succ "Cloudflare Worker deployed and configuration generated: $CONFIG"
+        return 0
+    else
+        msg err "Failed to generate Cloudflare Worker configuration and deploy"
+        return 1
+    fi
+}

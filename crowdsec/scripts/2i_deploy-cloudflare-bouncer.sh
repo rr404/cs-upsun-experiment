@@ -52,7 +52,7 @@ download_bouncer_release() {
     # Extract
     msg info "Extracting bouncer..."
     tar -xzf "${BOUNCER}-linux-amd64.tgz"
-    cd "${BOUNCER}-${CF_BOUNCER_VERSION#v}/"
+    cd "${BOUNCER}-${CF_BOUNCER_VERSION}/"
     
     # Update BIN_PATH for the helper functions
     BIN_PATH="./${BOUNCER}"
@@ -101,24 +101,24 @@ update_bouncer_config() {
     msg info "=== Updating configuration with tokens and parameters ==="
     
     # Set Cloudflare API tokens if provided
-    if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
+    if [ -n "${CLOUDFLARE_API_TOKENS:-}" ]; then
         msg info "Configuring Cloudflare tokens..."
         
         # Check what variable name the actual config file expects for v1
         if grep -q "cloudflare_token:" "$CONFIG" 2>/dev/null; then
-            set_config_var_value 'CLOUDFLARE_TOKEN' "$CLOUDFLARE_API_TOKEN"
+            set_config_var_value 'CLOUDFLARE_TOKEN' "$CLOUDFLARE_API_TOKENS"
         elif grep -q "api_token:" "$CONFIG" 2>/dev/null; then
-            set_config_var_value 'API_TOKEN' "$CLOUDFLARE_API_TOKEN"
-        elif grep -q "token:" "$CONFIG" 2>/dev/null; then
-            set_config_var_value 'TOKEN' "$CLOUDFLARE_API_TOKEN"
+            set_config_var_value 'API_TOKEN' "$CLOUDFLARE_API_TOKENS"
+        elif grep -q "token:" "$CONFIG" 2>/dev/null; theSn
+            set_config_var_value 'TOKEN' "$CLOUDFLARE_API_TOKENS"
         else
             # Fallback: try to add it manually to the config
             msg warn "Cloudflare token field not found in config, adding manually"
-            echo "api_token: $CLOUDFLARE_API_TOKEN" >> "$CONFIG"
+            echo "api_token: $CLOUDFLARE_API_TOKENS" >> "$CONFIG"
         fi
         msg succ "Cloudflare tokens configured"
     else
-        msg warn "CLOUDFLARE_API_TOKEN not defined. Manual configuration required in $CONFIG"
+        msg warn "CLOUDFLARE_API_TOKENS not defined. Manual configuration required in $CONFIG"
     fi
 
     # Set the local LAPI URL
@@ -166,7 +166,7 @@ show_deployment_summary() {
     msg info "Binary: $BIN_PATH_INSTALLED"
     msg info "Version: $CF_BOUNCER_VERSION"
     
-    if [ -n "${CLOUDFLARE_API_TOKEN:-}" ]; then
+    if [ -n "${CLOUDFLARE_API_TOKENS:-}" ]; then
         msg info "Cloudflare tokens: Configured"
     else
         msg warn "Cloudflare tokens: Not configured"
@@ -183,22 +183,29 @@ main() {
     # Step 2: Install binary and setup initial config
     install_bouncer_binary
     
-    # Step 3: Create API key
+    # Step 3: Generate Cloudflare Worker and deploy to Cloudflare
+    if generate_cloudflare_worker; then
+        msg succ "Cloudflare Worker deployment completed"
+    else
+        msg warn "Cloudflare Worker deployment failed - continuing with manual configuration"
+    fi
+    
+    # Step 4: Create API key
     if ! create_api_key; then
         msg warn "Continuing despite API key creation failure..."
     fi
     
-    # Step 4: Update config with tokens and settings
+    # Step 5: Update config with tokens and settings
     update_bouncer_config
     
-    # Step 5: Test configuration
+    # Step 6: Test configuration
     if test_bouncer_config; then
         msg succ "Cloudflare bouncer deployed successfully!"
     else
         msg warn "Deployment completed with warnings"
     fi
     
-    # Step 6: Show summary
+    # Step 7: Show summary
     show_deployment_summary
 }
 
