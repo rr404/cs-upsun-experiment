@@ -29,8 +29,8 @@ SERVICE_MODE="${SERVICE_MODE:-user}"
 BIN_PATH_INSTALLED="${BIN_PATH_INSTALLED:-${BIN_DIR:-/app/cs/bin}/$BOUNCER}"
 BIN_PATH="./$BOUNCER"
 CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/bouncers}"
-CONFIG_FILE="$BOUNCER.yaml"
-CONFIG="$CONFIG_DIR/$CONFIG_FILE"
+BOUNCER_CONFIG_FILE="$BOUNCER.yaml"
+BOUNCER_CONFIG_FILE_FULL_PATH="$CONFIG_DIR/$BOUNCER_CONFIG_FILE"
 # Use user systemd path instead of system
 SYSTEMD_PATH_FILE="${SYSTEMD_PATH_FILE:-$HOME/.config/systemd/user/$SERVICE}"
 }
@@ -40,7 +40,7 @@ SYSTEMD_PATH_FILE="${SYSTEMD_PATH_FILE:-$HOME/.config/systemd/user/$SERVICE}"
 # which has not yet been interpolated, like "$API_KEY",
 # and return true if it does.
 config_not_set() {
-    require 'CONFIG'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH'
     local varname before after
 
     varname=$1
@@ -49,7 +49,7 @@ config_not_set() {
         exit 1
     fi
 
-    before=$("$BIN_PATH_INSTALLED" -c "$CONFIG" -T 2>/dev/null || echo "")
+    before=$("$BIN_PATH_INSTALLED" -c "$BOUNCER_CONFIG_FILE_FULL_PATH" -T 2>/dev/null || echo "")
     if [ "$before" = "" ]; then
         # If binary doesn't exist or config test fails, assume not set
         return 0
@@ -73,7 +73,7 @@ need_api_key() {
 
 # Interpolate a variable in the config file with a value.
 set_config_var_value() {
-    require 'CONFIG'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH'
     local varname value before
 
     varname=$1
@@ -88,14 +88,14 @@ set_config_var_value() {
         exit 1
     fi
 
-    before=$(cat "$CONFIG")
+    before=$(cat "$BOUNCER_CONFIG_FILE_FULL_PATH")
     echo "$before" | \
         env "$varname=$value" envsubst "\$$varname" | \
-        install -m 0600 /dev/stdin "$CONFIG"
+        install -m 0600 /dev/stdin "$BOUNCER_CONFIG_FILE_FULL_PATH"
 }
 
 set_api_key() {
-    require 'CONFIG'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH'
     local api_key ret
     # if we can't set the key, the user will take care of it
     ret=0
@@ -118,7 +118,7 @@ set_api_key() {
 }
 
 set_local_port() {
-    require 'CONFIG'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH'
     local port cscli_cmd
     
     cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
@@ -136,13 +136,13 @@ set_local_port() {
     fi
     
     if [ "$port" != "" ]; then
-        sed -i "s/localhost:8080/127.0.0.1:$port/g" "$CONFIG"
-        sed -i "s/127.0.0.1:8080/127.0.0.1:$port/g" "$CONFIG"
+        sed -i "s/localhost:8080/127.0.0.1:$port/g" "$BOUNCER_CONFIG_FILE_FULL_PATH"
+        sed -i "s/127.0.0.1:8080/127.0.0.1:$port/g" "$BOUNCER_CONFIG_FILE_FULL_PATH"
     fi
 }
 
 set_local_lapi_url() {
-    require 'CONFIG'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH'
     local port varname cscli_cmd
     # $varname is the name of the variable to interpolate
     # in the config file with the URL of the LAPI server,
@@ -185,7 +185,7 @@ upgrade_bin() {
 
 # Generate Cloudflare Worker configuration and deploy to Cloudflare
 generate_cloudflare_worker() {
-    require 'CONFIG' 'BIN_PATH_INSTALLED'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH' 'BIN_PATH_INSTALLED'
     local cloudflare_tokens
     
     cloudflare_tokens="${CLOUDFLARE_API_TOKENS:-}"
@@ -197,12 +197,12 @@ generate_cloudflare_worker() {
     msg info "Generating Cloudflare Worker configuration and deploying to Cloudflare..."
     
     # Remove existing config to force regeneration
-    rm -f "$CONFIG"
+    rm -f "$BOUNCER_CONFIG_FILE_FULL_PATH"
     
     # Generate config and deploy Worker to Cloudflare
-    if "$BIN_PATH_INSTALLED" -g "$cloudflare_tokens" -o "$CONFIG" 2>/dev/null; then
-        chmod 0600 "$CONFIG"
-        msg succ "Cloudflare Worker deployed and configuration generated: $CONFIG"
+    if "$BIN_PATH_INSTALLED" -g "$cloudflare_tokens" -o "$BOUNCER_CONFIG_FILE_FULL_PATH" 2>/dev/null; then
+        chmod 0600 "$BOUNCER_CONFIG_FILE_FULL_PATH"
+        msg succ "Cloudflare Worker deployed and configuration generated: $BOUNCER_CONFIG_FILE_FULL_PATH"
         return 0
     else
         msg err "Failed to generate Cloudflare Worker configuration and deploy"

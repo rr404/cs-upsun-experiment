@@ -27,8 +27,8 @@ SERVICE="$BOUNCER.service"
 SERVICE_MODE="${SERVICE_MODE:-user}"
 # Fastly bouncer uses Python/pip installation, so no binary path needed
 CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/bouncers}"
-CONFIG_FILE="$BOUNCER.yaml"
-CONFIG="$CONFIG_DIR/$CONFIG_FILE"
+BOUNCER_CONFIG_FILE="$BOUNCER.yaml"
+BOUNCER_CONFIG_FILE_FULL_PATH="$CONFIG_DIR/$BOUNCER_CONFIG_FILE"
 # Use user systemd path instead of system
 SYSTEMD_PATH_FILE="${SYSTEMD_PATH_FILE:-$HOME/.config/systemd/user/$SERVICE}"
 # Python virtual environment path
@@ -94,7 +94,7 @@ install_fastly_bouncer() {
 
 # Generate Fastly bouncer configuration
 generate_fastly_config() {
-    require 'CONFIG' 'VENV_PATH'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH' 'VENV_PATH'
     local fastly_tokens
     
     fastly_tokens="${FASTLY_API_TOKEN:-}"
@@ -108,31 +108,31 @@ generate_fastly_config() {
     . "$VENV_PATH/bin/activate"
     
     # Create config directory
-    mkdir -p "$(dirname "$CONFIG")"
+    mkdir -p "$(dirname "$BOUNCER_CONFIG_FILE_FULL_PATH")"
     
     msg info "Generating Fastly bouncer configuration..."
     if [ "$fastly_tokens" = "<FASTLY_TOKEN>" ]; then
         # Generate basic config without tokens
-        crowdsec-fastly-bouncer -g "$fastly_tokens" > "$CONFIG" 2>/dev/null || {
+        crowdsec-fastly-bouncer -g "$fastly_tokens" > "$BOUNCER_CONFIG_FILE_FULL_PATH" 2>/dev/null || {
             msg err "Failed to generate configuration"
             return 1
         }
     else
         # Generate config with actual tokens
-        crowdsec-fastly-bouncer -g "$fastly_tokens" > "$CONFIG" 2>/dev/null || {
+        crowdsec-fastly-bouncer -g "$fastly_tokens" > "$BOUNCER_CONFIG_FILE_FULL_PATH" 2>/dev/null || {
             msg err "Failed to generate configuration with tokens"
             return 1
         }
     fi
     
-    chmod 0600 "$CONFIG"
-    msg succ "Configuration file created: $CONFIG"
+    chmod 0600 "$BOUNCER_CONFIG_FILE_FULL_PATH"
+    msg succ "Configuration file created: $BOUNCER_CONFIG_FILE_FULL_PATH"
     return 0
 }
 
 # Set API key in the Fastly bouncer config
 set_fastly_api_key() {
-    require 'CONFIG'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH'
     local api_key ret
     ret=0
 
@@ -149,8 +149,8 @@ set_fastly_api_key() {
     if [ "$api_key" != "" ] && [ "$api_key" != "<API_KEY>" ]; then
         # Update lapi_key in the YAML config
         if command -v sed >/dev/null; then
-            sed -i "s/<API_KEY>/$api_key/g" "$CONFIG"
-            sed -i "s/lapi_key:.*/lapi_key: $api_key/" "$CONFIG"
+            sed -i "s/<API_KEY>/$api_key/g" "$BOUNCER_CONFIG_FILE_FULL_PATH"
+            sed -i "s/lapi_key:.*/lapi_key: $api_key/" "$BOUNCER_CONFIG_FILE_FULL_PATH"
         fi
     fi
 
@@ -159,7 +159,7 @@ set_fastly_api_key() {
 
 # Set local LAPI URL in Fastly config
 set_fastly_lapi_url() {
-    require 'CONFIG'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH'
     local port cscli_cmd
     
     cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
@@ -181,30 +181,30 @@ set_fastly_lapi_url() {
 
     # Update lapi_url in the YAML config
     if command -v sed >/dev/null; then
-        sed -i "s|lapi_url:.*|lapi_url: http://127.0.0.1:$port|" "$CONFIG"
-        sed -i "s|url:.*|url: http://127.0.0.1:$port|" "$CONFIG"
+        sed -i "s|lapi_url:.*|lapi_url: http://127.0.0.1:$port|" "$BOUNCER_CONFIG_FILE_FULL_PATH"
+        sed -i "s|url:.*|url: http://127.0.0.1:$port|" "$BOUNCER_CONFIG_FILE_FULL_PATH"
     fi
 }
 
 # Test Fastly bouncer configuration
 test_fastly_config() {
-    require 'CONFIG' 'VENV_PATH'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH' 'VENV_PATH'
     
     # Activate virtual environment
     # shellcheck source=/dev/null
     . "$VENV_PATH/bin/activate"
     
-    if [ -f "$CONFIG" ]; then
+    if [ -f "$BOUNCER_CONFIG_FILE_FULL_PATH" ]; then
         msg info "Testing Fastly bouncer configuration..."
-        if crowdsec-fastly-bouncer -c "$CONFIG" -t >/dev/null 2>&1; then
+        if crowdsec-fastly-bouncer -c "$BOUNCER_CONFIG_FILE_FULL_PATH" -t >/dev/null 2>&1; then
             msg succ "Configuration test successful"
             return 0
         else
-            msg warn "Configuration test failed - check $CONFIG manually"
+            msg warn "Configuration test failed - check $BOUNCER_CONFIG_FILE_FULL_PATH manually"
             return 1
         fi
     else
-        msg err "Configuration file not found: $CONFIG"
+        msg err "Configuration file not found: $BOUNCER_CONFIG_FILE_FULL_PATH"
         return 1
     fi
 }
