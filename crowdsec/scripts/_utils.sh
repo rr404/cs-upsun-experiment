@@ -50,18 +50,11 @@ require() {
     [ "$#" -eq 0 ] || require "$@"
 }
 
-# Assert write permissions for non-sudo environment
-assert_root() {
-    # In non-sudo /app/cs environment, just validate we have write access
-    if [ ! -w "$(dirname "$BIN_PATH_INSTALLED")" ] 2>/dev/null; then
-        mkdir -p "$(dirname "$BIN_PATH_INSTALLED")" 2>/dev/null || {
-            msg err "Cannot write to binary directory: $(dirname "$BIN_PATH_INSTALLED")"
-            exit 1
-        }
-    fi
-    if [ ! -w "$(dirname "$CONFIG")" ] 2>/dev/null; then
-        mkdir -p "$(dirname "$CONFIG")" 2>/dev/null || {
-            msg err "Cannot write to config directory: $(dirname "$CONFIG")"
+# Try to Create and test write access to a directory
+assert_can_write_to_path() {
+    if [ ! -w "$(dirname "$1")" ] 2>/dev/null; then
+        mkdir -p "$(dirname "$1")" 2>/dev/null || {
+            msg err "Cannot write to config directory: $(dirname "$1")"
             exit 1
         }
     fi

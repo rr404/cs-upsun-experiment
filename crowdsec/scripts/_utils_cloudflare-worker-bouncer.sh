@@ -26,7 +26,7 @@ BOUNCER_PREFIX=$(echo "$BOUNCER" | sed 's/crowdsec-/cs-/g')
 SERVICE="$BOUNCER.service"
 SERVICE_MODE="${SERVICE_MODE:-user}"
 # Use /app/cs paths for non-sudo environment
-BIN_PATH_INSTALLED="${BIN_PATH_INSTALLED:-${BIN_DIR:-/app/cs/bin}/$BOUNCER}"
+BOUNCER_BIN_FULL_PATH="${BOUNCER_BIN_FULL_PATH:-${BIN_DIR:-/app/cs/bin}/$BOUNCER}"
 BIN_PATH="./$BOUNCER"
 CONFIG_DIR="${CONFIG_DIR:-${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/bouncers}"
 BOUNCER_CONFIG_FILE="$BOUNCER.yaml"
@@ -49,7 +49,7 @@ config_not_set() {
         exit 1
     fi
 
-    before=$("$BIN_PATH_INSTALLED" -c "$BOUNCER_CONFIG_FILE_FULL_PATH" -T 2>/dev/null || echo "")
+    before=$("$BOUNCER_BIN_FULL_PATH" -c "$BOUNCER_CONFIG_FILE_FULL_PATH" -T 2>/dev/null || echo "")
     if [ "$before" = "" ]; then
         # If binary doesn't exist or config test fails, assume not set
         return 0
@@ -178,14 +178,14 @@ set_local_lapi_url() {
 # This function is now provided by the generic _utils.sh
 
 upgrade_bin() {
-    require 'BIN_PATH' 'BIN_PATH_INSTALLED'
-    rm -f "$BIN_PATH_INSTALLED"
-    install -v -m 0755 -D "$BIN_PATH" "$BIN_PATH_INSTALLED"
+    require 'BIN_PATH' 'BOUNCER_BIN_FULL_PATH'
+    rm -f "$BOUNCER_BIN_FULL_PATH"
+    install -v -m 0755 -D "$BIN_PATH" "$BOUNCER_BIN_FULL_PATH"
 }
 
 # Generate Cloudflare Worker configuration and deploy to Cloudflare
 generate_cloudflare_worker() {
-    require 'BOUNCER_CONFIG_FILE_FULL_PATH' 'BIN_PATH_INSTALLED'
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH' 'BOUNCER_BIN_FULL_PATH'
     local cloudflare_tokens
     
     cloudflare_tokens="${CLOUDFLARE_API_TOKENS:-}"
@@ -200,7 +200,7 @@ generate_cloudflare_worker() {
     rm -f "$BOUNCER_CONFIG_FILE_FULL_PATH"
     
     # Generate config and deploy Worker to Cloudflare
-    if "$BIN_PATH_INSTALLED" -g "$cloudflare_tokens" -o "$BOUNCER_CONFIG_FILE_FULL_PATH" 2>/dev/null; then
+    if "$BOUNCER_BIN_FULL_PATH" -g "$cloudflare_tokens" -o "$BOUNCER_CONFIG_FILE_FULL_PATH" 2>/dev/null; then
         chmod 0600 "$BOUNCER_CONFIG_FILE_FULL_PATH"
         msg succ "Cloudflare Worker deployed and configuration generated: $BOUNCER_CONFIG_FILE_FULL_PATH"
         return 0

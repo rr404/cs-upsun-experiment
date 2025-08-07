@@ -34,7 +34,7 @@ download_bouncer_release() {
     msg info "=== Downloading ${BOUNCER} ${CF_BOUNCER_VERSION} release ==="
     
     # Create necessary directories - ensure /app/cs paths
-    mkdir -p "$CONFIG_DIR" "$TMP_DIR" "$(dirname "$BIN_PATH_INSTALLED")"
+    mkdir -p "$CONFIG_DIR" "$TMP_DIR" "$(dirname "$BOUNCER_BIN_FULL_PATH")"
     cd "$TMP_DIR"
 
     # Download if not already present
@@ -65,12 +65,12 @@ install_bouncer_binary() {
     msg info "=== Installing binary and initial configuration ==="
     
     # Validate we have write access before proceeding
-    assert_root
+    assert_can_write_to_path $BOUNCER_BIN_FULL_PATH
     
     # Install the binary
     msg info "Installing bouncer binary..."
     upgrade_bin
-    msg succ "Binary installed: $BIN_PATH_INSTALLED"
+    msg succ "Binary installed: $BOUNCER_BIN_FULL_PATH"
 
     # Copy and setup config file if it doesn't exist
     if [ ! -f "$CONFIG" ]; then
@@ -109,7 +109,7 @@ update_bouncer_config() {
             set_config_var_value 'CLOUDFLARE_TOKEN' "$CLOUDFLARE_API_TOKENS"
         elif grep -q "api_token:" "$CONFIG" 2>/dev/null; then
             set_config_var_value 'API_TOKEN' "$CLOUDFLARE_API_TOKENS"
-        elif grep -q "token:" "$CONFIG" 2>/dev/null; theSn
+        elif grep -q "token:" "$CONFIG" 2>/dev/null; then
             set_config_var_value 'TOKEN' "$CLOUDFLARE_API_TOKENS"
         else
             # Fallback: try to add it manually to the config
@@ -143,14 +143,14 @@ update_bouncer_config() {
 test_bouncer_config() {
     msg info "=== Testing final configuration ==="
     
-    if [ -x "$BIN_PATH_INSTALLED" ]; then
+    if [ -x "$BOUNCER_BIN_FULL_PATH" ]; then
         msg info "Testing configuration..."
-        if "$BIN_PATH_INSTALLED" -c "$CONFIG" -T >/dev/null 2>&1; then
+        if "$BOUNCER_BIN_FULL_PATH" -c "$CONFIG" -T >/dev/null 2>&1; then
             msg succ "Configuration test successful"
             return 0
         else
             msg warn "Configuration test failed - check $CONFIG manually"
-            msg info "You can test manually with: $BIN_PATH_INSTALLED -c $CONFIG -T"
+            msg info "You can test manually with: $BOUNCER_BIN_FULL_PATH -c $CONFIG -T"
             return 1
         fi
     else
@@ -163,7 +163,7 @@ test_bouncer_config() {
 show_deployment_summary() {
     msg info "=== Deployment Summary ==="
     msg info "Configuration file: $CONFIG"
-    msg info "Binary: $BIN_PATH_INSTALLED"
+    msg info "Binary: $BOUNCER_BIN_FULL_PATH"
     msg info "Version: $CF_BOUNCER_VERSION"
     
     if [ -n "${CLOUDFLARE_API_TOKENS:-}" ]; then

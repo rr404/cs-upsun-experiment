@@ -48,7 +48,7 @@ install_fastly_bouncer_package() {
     msg info "=== Installing Fastly bouncer package ==="
     
     # Validate we have write access before proceeding
-    assert_root
+    assert_can_write_to_path "$VENV_PATH/bin/crowdsec-fastly-bouncer"
     
     # Install the bouncer via pip
     if ! install_fastly_bouncer; then
