@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
 
-# Set variables for the bouncer installation
-BOUNCER_FULL_NAME="crowdsec-cloudflare-worker-bouncer"
-#BOUNCER_PREFIX=$(echo "$BOUNCER" | sed 's/crowdsec-/cs-/g')#??delete
-BOUNCER_VERSION_MIN="v0.0.14"
-BOUNCER_VERSION="${BOUNCER_VERSION:-${BOUNCER_VERSION_MIN}}"
-DOWNLOAD_URL="https://github.com/crowdsecurity/cs-cloudflare-worker-bouncer/releases/download/${BOUNCER_VERSION}/${BOUNCER_FULL_NAME}-linux-amd64.tgz"
-
-BOUNCER_CONFIG="$BOUNCER.yaml"
-BOUNCER_CONFIG_FULL_PATH="$CROWDSEC_DIR/bouncers/$BOUNCER_CONFIG"
-
-BOUNCER_BIN_FULL_PATH="${BOUNCER_BIN_FULL_PATH:-${BIN_DIR:-/app/cs/bin}/$BOUNCER_FULL_NAME}"
-
-#==========================================================================#
+echo "Deploying Cloudflare Bouncer"
 
 # Pre-requisites sourcing and variables setup
 ## Source the environment variables first
@@ -28,45 +16,29 @@ fi
 ## Source the bouncer helper functions
 BOUNCER_HELPER="$(dirname "$0")/_utils_cloudflare-worker-bouncer.sh"
 
-#??delete
-# if [ ! -f "$BOUNCER_HELPER" ]; then
-#     echo "Error: Bouncer helper script not found at $BOUNCER_HELPER" >&2
-#     exit 1
-# fi
+if [ ! -f "$BOUNCER_HELPER" ]; then
+    echo "Error: Bouncer helper script not found at $BOUNCER_HELPER" >&2
+    exit 1
+fi
 
-# source "$BOUNCER_HELPER"
-#==========================================================================#
+source "$BOUNCER_HELPER"
 
-# Main deployment flow
-main() {
-    msg info "Starting Cloudflare bouncer deployment"  
-    download_bouncer_release
-    install_bouncer
-    
-    # Setup bouncer: generating worker on CF + filling config with CF zones config
-    ## ...
-    
-    # Step 6: Test configuration
-    if test_bouncer_config; then
-        msg succ "Cloudflare bouncer deployed successfully!"
-    else
-        msg warn "Deployment completed with warnings"
-    fi
-    
-    # Step 7: Show summary
-    show_deployment_summary
-}
+## Set variables for the bouncer installation
+BOUNCER_VERSION_MIN="v0.0.14"
+BOUNCER_VERSION="${BOUNCER_VERSION:-${BOUNCER_VERSION_MIN}}"
+DOWNLOAD_URL="https://github.com/crowdsecurity/cs-cloudflare-worker-bouncer/releases/download/${BOUNCER_VERSION}/${BOUNCER}-linux-amd64.tgz"
 
+# Cloudflare Worker-Bouncer specific functions
+## Function: Download and extract the bouncer release
 download_bouncer_release() {
-    msg info "=== Downloading ${BOUNCER_FULL_NAME} ${BOUNCER_VERSION} release ==="
+    msg info "=== Downloading ${BOUNCER} ${BOUNCER_VERSION} release ==="
     
-    # Create necessary directories and going to TMP_DIR
-    mkdir -p "$TMP_DIR" "$(dirname "$BOUNCER_BIN_FULL_PATH")" "$(dirname "$BOUNCER_CONFIG_FULL_PATH")"
+    # Create necessary directories - ensure /app/cs paths
+    mkdir -p "$CONFIG_DIR" "$TMP_DIR" "$(dirname "$BOUNCER_BIN_FULL_PATH")"
     cd "$TMP_DIR"
 
-    # Download in TMP if not already present
-    local archive_name=$(basename "$DOWNLOAD_URL")
-    if [ ! -f $archive_name ]; then
+    # Download if not already present
+    if [ ! -f "${BOUNCER}-linux-amd64.tgz" ]; then
         msg info "Downloading ${BOUNCER} ${BOUNCER_VERSION}..."
         wget "$DOWNLOAD_URL" || {
             msg err "Failed to download bouncer"
@@ -77,79 +49,39 @@ download_bouncer_release() {
         msg info "Archive already present, reusing"
     fi
 
-    # Extract and cd into the bouncer directory
+    # Extract
     msg info "Extracting bouncer..."
-    tar -xzf "$archive_name"
-    cd "${BOUNCER_FULL_NAME}-${BOUNCER_VERSION}/"
+    tar -xzf "${BOUNCER}-linux-amd64.tgz"
+    cd "${BOUNCER}-${BOUNCER_VERSION}/"
     
     # Update BIN_PATH for the helper functions
-    # BIN_PATH="./${BOUNCER}" #??delete
+    BIN_PATH="./${BOUNCER}"
     
     msg succ "Release downloaded and extracted successfully"
 }
 
-install_bouncer() {
+## Function: Install binary and setup initial config
+install_bouncer_binary() {
     msg info "=== Installing binary and initial configuration ==="
     
-    # Install the bouncer binary
-    msg info "Installing bouncer binary..."
+    # Validate we have write access before proceeding
     assert_can_write_to_path $BOUNCER_BIN_FULL_PATH
-    install_executable "$TMP_DIR/${BOUNCER_FULL_NAME}-${BOUNCER_VERSION}/${BOUNCER_FULL_NAME}" "$BOUNCER_BIN_FULL_PATH"
+    
+    # Install the binary
+    msg info "Installing bouncer binary..."
+    upgrade_bin
     msg succ "Binary installed: $BOUNCER_BIN_FULL_PATH"
 
-    # generate Bouncer API
-    ## ...
-    # Retrieve LAPI url from CrowdSec config
-    ## ...
-    ## Install the bouncer config file with envsubst LAPI uri and token
-    ## ...
-
-
     # Copy and setup config file if it doesn't exist
-    if [ ! -f "$BOUNCER_CONFIG_FULL_PATH" ]; then
+    if [ ! -f "$CONFIG" ]; then
         msg info "Setting up configuration file..."
-        cp "config/${BOUNCER_CONFIG}" "$BOUNCER_CONFIG_FULL_PATH"
-        chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
-        msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
+        cp "config/${CONFIG_FILE}" "$CONFIG"
+        chmod 0600 "$CONFIG"
+        msg succ "Configuration file created: $CONFIG"
     else
-        msg info "Configuration file exists: $BOUNCER_CONFIG_FULL_PATH"
+        msg info "Configuration file exists: $CONFIG"
     fi
 }
-
-#==========================================================================#
-
-# Execute main deployment
-main "$@"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-############################################################################################################
-############################################################################################################
 
 ## Function: Create API key with CrowdSec
 create_api_key() {
@@ -209,13 +141,20 @@ update_bouncer_config() {
 
 ## Function: Test the final configuration
 test_bouncer_config() {
-     local config_file="$1"
+    msg info "=== Testing final configuration ==="
     
-    if ../usr/local/bin/crowdsec-cloudflare-worker-bouncer -c "$config_file" -t 2>&1 | grep -q "config is valid"; then
-        echo "config is ok"
-        return 0
+    if [ -x "$BOUNCER_BIN_FULL_PATH" ]; then
+        msg info "Testing configuration..."
+        if "$BOUNCER_BIN_FULL_PATH" -c "$CONFIG" -T >/dev/null 2>&1; then
+            msg succ "Configuration test successful"
+            return 0
+        else
+            msg warn "Configuration test failed - check $CONFIG manually"
+            msg info "You can test manually with: $BOUNCER_BIN_FULL_PATH -c $CONFIG -T"
+            return 1
+        fi
     else
-        echo "config is not valid"
+        msg warn "Binary not executable, cannot test configuration"
         return 1
     fi
 }
@@ -234,5 +173,41 @@ show_deployment_summary() {
     fi
 }
 
+# Main deployment flow
+main() {
+    msg info "Starting Cloudflare bouncer deployment"
+    
+    # Step 1: Download bouncer release
+    download_bouncer_release
+    
+    # Step 2: Install binary and setup initial config
+    install_bouncer_binary
+    
+    # Step 3: Generate Cloudflare Worker and deploy to Cloudflare
+    if generate_cloudflare_worker; then
+        msg succ "Cloudflare Worker deployment completed"
+    else
+        msg warn "Cloudflare Worker deployment failed - continuing with manual configuration"
+    fi
+    
+    # Step 4: Create API key
+    if ! create_api_key; then
+        msg warn "Continuing despite API key creation failure..."
+    fi
+    
+    # Step 5: Update config with tokens and settings
+    update_bouncer_config
+    
+    # Step 6: Test configuration
+    if test_bouncer_config; then
+        msg succ "Cloudflare bouncer deployed successfully!"
+    else
+        msg warn "Deployment completed with warnings"
+    fi
+    
+    # Step 7: Show summary
+    show_deployment_summary
+}
 
-
+# Execute main deployment
+main "$@"

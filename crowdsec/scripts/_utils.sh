@@ -9,6 +9,8 @@ set -eu
 # While not requiring bash, it is not strictly POSIX-compliant because
 # it uses local variables, but it should work with every modern shell.
 
+CSCLI_CMD="${CROWDSEC_DIR}/cscli -c ${CROWDSEC_DIR}/config.yaml"
+
 # Color management for terminal output
 if [ ! -t 0 ]; then
     # terminal is not interactive; no colors
@@ -60,50 +62,97 @@ assert_can_write_to_path() {
     fi
 }
 
-# Register a bouncer with CrowdSec and return the API key
-register_bouncer() {
-    require 'BOUNCER_PREFIX'
-    local bouncer_name api_key cscli_cmd
+# usage get_param_value_from_yaml <path to yaml file> <path of parameter>
+## example get_param_value_from_yaml /etc/crowdsec/config.yaml api.server.listen_uri
+get_param_value_from_yaml() {
+    local file="$1"
+    local path="$2"
     
-    bouncer_name="${1:-$BOUNCER_PREFIX-$(date +%s)}"
+    # Split the path by dots
+    IFS='.' read -ra KEYS <<< "$path"
     
-    # Use the specific cscli path for /app/cs environment
-    cscli_cmd="${CROWDSEC_DIR:-/app/cs/etc/crowdsec}/cscli"
-    if [ ! -x "$cscli_cmd" ]; then
-        cscli_cmd="cscli"
-    fi
+    local current_output=""
+    
+    # Start with the entire file for the first key
+    current_output=$(cat "$file")
+    
+    # Process each key in sequence
+    for i in "${!KEYS[@]}"; do
+        local key="${KEYS[$i]}"
+        
+        if [ $i -eq 0 ]; then
+            # First key: search from beginning of file
+            current_output=$(echo "$current_output" | grep -A50 "^${key}:")
+        else
+            # Subsequent keys: search within previous results
+            current_output=$(echo "$current_output" | grep -A20 "${key}:")
+        fi
+        
+        # If no match found, return empty
+        if [ -z "$current_output" ]; then
+            return 1
+        fi
+    done
+    
+    # Extract the final value (everything after the last colon and spaces)
+    echo "$current_output" | head -1 | awk '{print $2}'
+}
 
-    if ! command -v "$cscli_cmd" >/dev/null; then
-        msg err "cscli not found"
+install_executable() {
+    local source_path="$1"
+    local dest_path="$2"
+    
+    # Validate required parameters
+    if [[ -z "$source_path" || -z "$dest_path" ]]; then
+        msg err "Usage: install_executable <source_path> <dest_path>"
         return 1
     fi
+    
+    # Remove existing file and install new one
+    rm -f "$dest_path"
+    install -v -m 0755 -D "$source_path" "$dest_path"
+}
 
-    msg info "Registering bouncer: $bouncer_name"
-    
-    # Use config file if available
-    if [ -n "${CROWDSEC_DIR:-}" ] && [ -f "${CROWDSEC_DIR}/config.yaml" ]; then
-        api_key=$("$cscli_cmd" --config "${CROWDSEC_DIR}/config.yaml" bouncer add "$bouncer_name" -o raw 2>/dev/null || true)
+# We'll assume here the config full path ponts to the template file of the bouncer ready to be envsubst
+link_bouncer_to_lapi() {
+    local bouncer_name="$1"
+    local bouncer_config_fullpath="$2"
+    local api_key was_successful
+    # if we can't set the key, the user will take care of it
+    was_successful=0
+
+    # Use the generic bouncer registration function
+    if api_key=$(register_bouncer); then
+        msg succ "API Key successfully created"
+        # API_KEY is already exported by register_bouncer
     else
-        api_key=$("$cscli_cmd" bouncer add "$bouncer_name" -o raw 2>/dev/null || true)
+        msg err "Failed to register bouncer with CrowdSec"
+        api_key="<API_KEY>"
+        was_successful=1
     fi
+
+    if [ "$api_key" != "" ] && [ "$api_key" != "<API_KEY>" ]; then
+        set_config_var_value 'API_KEY' "$api_key"
+    fi
+
+    return "$ret"
+}
+
+# Register a bouncer with CrowdSec and return the API key
+register_bouncer() {
+    local bouncer_name="$1"
+    local cscli_cmd generated_api_key
     
-    if [ -z "$api_key" ]; then
+    generated_api_key=$("${CSCLI_CMD} bouncer add ${bouncer_name}" -o raw 2>/dev/null || true)
+    
+    if [ -z "$generated_api_key" ]; then
         msg err "Failed to register bouncer: $bouncer_name"
         return 1
     fi
     
     msg succ "Bouncer registered successfully: $bouncer_name"
     
-    # Store bouncer name for potential deletion
-    if [ -n "${CONFIG:-}" ]; then
-        echo "$bouncer_name" > "$CONFIG.id"
-    fi
-    
-    # Export API_KEY for use by calling functions
-    API_KEY="$api_key"
-    export API_KEY
-    
-    echo "$api_key"
+    echo "$generated_api_key"
 }
 
 # Delete a bouncer from CrowdSec
