@@ -97,18 +97,20 @@ install_bouncer() {
     install_executable "$TMP_DIR/${BOUNCER_FULL_NAME}-${BOUNCER_VERSION}/${BOUNCER_FULL_NAME}" "$BOUNCER_BIN_FULL_PATH"
     msg succ "Binary installed: $BOUNCER_BIN_FULL_PATH"
 
-    # generate Bouncer API and store in API_KEY for replacement in config
-    msg info "Registering bouncer to LAPI..."
-    API_KEY=$(register_bouncer_to_lapi "$BOUNCER_FULL_NAME")
-
-    # Retrieve LAPI url from CrowdSec config
-    CROWDSEC_LAPI_URL=$(get_param_value_from_yaml "${CROWDSEC_DIR}/config.yaml" "api.server.listen_uri")
-
-    ## Install the bouncer config file with envsubst LAPI uri and token
-    msg info "Installing bouncer configuration file with LAPI URL= ${CROWDSEC_LAPI_URL} and bouncer API KEY = ${API_KEY}"
-    envsubst < "config/${BOUNCER_CONFIG}" > "$BOUNCER_CONFIG_FULL_PATH"
+    # Copy the bouncer template configuration file
+    msg info "Installing bouncer configuration file..."
+    assert_can_write_to_path "$BOUNCER_CONFIG_FULL_PATH"
+    cp "config/${BOUNCER_CONFIG}" "$BOUNCER_CONFIG_FULL_PATH"
     chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
-    msg succ "Configuration file installed: $BOUNCER_CONFIG_FULL_PATH"
+    
+    # Retrieve LAPI url from CrowdSec config and save it to bouncer config
+    msg info "Setting LAPI URL in bouncer configuration..."
+    CROWDSEC_LAPI_URL=$(get_param_value_from_yaml "${CROWDSEC_DIR}/config.yaml" "api.server.listen_uri")
+    set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'CROWDSEC_LAPI_URL' "$CROWDSEC_LAPI_URL"
+    
+    # Link bouncer to LAPI & update it's config with generated bouncer LAPI token
+    msg info "Linking bouncer to LAPI and updating configuration..."
+    link_bouncer_to_lapi "$BOUNCER_CONFIG_FULL_PATH" "$BOUNCER_FULL_NAME"
 }
 
 # Generate Cloudflare Worker configuration and deploy to Cloudflare

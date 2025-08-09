@@ -9,8 +9,6 @@ set -eu
 # While not requiring bash, it is not strictly POSIX-compliant because
 # it uses local variables, but it should work with every modern shell.
 
-CSCLI_CMD="${CROWDSEC_DIR}/cscli -c ${CROWDSEC_DIR}/config.yaml"
-
 # Color management for terminal output
 if [ ! -t 0 ]; then
     # terminal is not interactive; no colors
@@ -98,6 +96,27 @@ get_param_value_from_yaml() {
     echo "$current_output" | head -1 | awk '{print $2}'
 }
 
+call_cscli() {
+   "${CROWDSEC_DIR}/cscli" -c "${CROWDSEC_DIR}/config.yaml" "$@"
+}
+
+set_config_var_value() {
+    local config_file varname value orig_config_content
+    config_file="$1"
+    varname=$2
+    value=$3
+
+    if [ -z "$config_file" ] || [ -z "$varname" ] || [ -z "$value" ]; then
+        msg err "Usage: set_config_var_value <config_file> <varname> <value>"
+        return 1
+    fi
+
+    orig_config_content=$(cat "$config_file")
+    echo "$orig_config_content" | \
+        env "$varname=$value" envsubst "\$$varname" | \
+        install -m 0600 /dev/stdin "$config_file"
+}
+
 install_executable() {
     local source_path="$1"
     local dest_path="$2"
@@ -115,27 +134,21 @@ install_executable() {
 
 # We'll assume here the config full path ponts to the template file of the bouncer ready to be envsubst
 link_bouncer_to_lapi() {
-    local bouncer_name="$1"
-    local bouncer_config_fullpath="$2"
-    local api_key was_successful
-    # if we can't set the key, the user will take care of it
-    was_successful=0
+    local bouncer_config_fullpath="$1"
+    local bouncer_name="$2"
+    local api_key
 
     # Use the generic bouncer registration function
-    if api_key=$(register_bouncer); then
+    if api_key=$(register_bouncer_to_lapi $bouncer_name); then
         msg succ "API Key successfully created"
-        # API_KEY is already exported by register_bouncer
+        msg info "Saving API Key to bouncer configuration file"
+        set_config_var_value $bouncer_config_fullpath 'API_KEY' "$api_key"
     else
         msg err "Failed to register bouncer with CrowdSec"
-        api_key="<API_KEY>"
-        was_successful=1
+        return 1        
     fi
 
-    if [ "$api_key" != "" ] && [ "$api_key" != "<API_KEY>" ]; then
-        set_config_var_value 'API_KEY' "$api_key"
-    fi
-
-    return "$ret"
+    msg succ "Bouncer linked to LAPI: $bouncer_name"
 }
 
 # Register a bouncer with CrowdSec and return the API key
@@ -143,7 +156,7 @@ register_bouncer_to_lapi() {
     local bouncer_name="$1"
     local generated_api_key
     
-    generated_api_key=$("${CSCLI_CMD} bouncer add ${bouncer_name}" -o raw 2>/dev/null || true)
+    generated_api_key=$(call_cscli bouncer add ${bouncer_name} -o raw 2>/dev/null)
     
     if [ -z "$generated_api_key" ]; then
         msg err "Failed to register bouncer: $bouncer_name"
