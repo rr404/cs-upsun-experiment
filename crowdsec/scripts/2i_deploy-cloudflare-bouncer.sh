@@ -106,7 +106,7 @@ install_bouncer() {
     # Retrieve LAPI url from CrowdSec config and save it to bouncer config
     msg info "Setting LAPI URL in bouncer configuration..."
     CROWDSEC_LAPI_URL=$(get_param_value_from_yaml "${CROWDSEC_DIR}/config.yaml" "api.server.listen_uri")
-    set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'CROWDSEC_LAPI_URL' "$CROWDSEC_LAPI_URL"
+    set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'CROWDSEC_LAPI_URL' "http://${CROWDSEC_LAPI_URL}"
     
     # Link bouncer to LAPI & update it's config with generated bouncer LAPI token
     msg info "Linking bouncer to LAPI and updating configuration..."
@@ -127,7 +127,7 @@ setup_cloudflare_worker() {
     msg info "Generating Cloudflare Worker configuration and deploying to Cloudflare..."
     
     # Generate config and deploy Worker to Cloudflare
-    if "$BOUNCER_BIN_FULL_PATH" -g "$cloudflare_tokens" -o "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
+    if "$BOUNCER_BIN_FULL_PATH" -c "$BOUNCER_CONFIG_FULL_PATH" -g "$cloudflare_tokens" -o "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
         msg succ "Cloudflare Worker deployed and configuration generated: $BOUNCER_CONFIG_FULL_PATH"
         return 0
     else

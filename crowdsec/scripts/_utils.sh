@@ -101,20 +101,15 @@ call_cscli() {
 }
 
 set_config_var_value() {
-    local config_file varname value orig_config_content
+    local config_file varname value
     config_file="$1"
     varname=$2
     value=$3
 
-    if [ -z "$config_file" ] || [ -z "$varname" ] || [ -z "$value" ]; then
-        msg err "Usage: set_config_var_value <config_file> <varname> <value>"
-        return 1
-    fi
-
-    orig_config_content=$(cat "$config_file")
-    echo "$orig_config_content" | \
-        env "$varname=$value" envsubst "\$$varname" | \
-        install -m 0600 /dev/stdin "$config_file"
+    # Replaces ${varname}
+    sed -i "s|\\\${${varname}}|$value|g" "$config_file"
+    # Replace $varname
+    sed -i "s|\\\$${varname}\\b|$value|g" "$config_file"
 }
 
 install_executable() {
@@ -132,16 +127,17 @@ install_executable() {
     install -v -m 0755 -D "$source_path" "$dest_path"
 }
 
-# We'll assume here the config full path ponts to the template file of the bouncer ready to be envsubst
+# We'll assume here the config full path points to the template file of the bouncer
 link_bouncer_to_lapi() {
     local bouncer_config_fullpath="$1"
-    local bouncer_name="$2"
+    local bouncer_name="${2}-upsun-$(date +%s)"
     local api_key
 
     # Use the generic bouncer registration function
     if api_key=$(register_bouncer_to_lapi $bouncer_name); then
         msg succ "API Key successfully created"
         msg info "Saving API Key to bouncer configuration file"
+        msg info $(cat $bouncer_config_fullpath)
         set_config_var_value $bouncer_config_fullpath 'API_KEY' "$api_key"
     else
         msg err "Failed to register bouncer with CrowdSec"
