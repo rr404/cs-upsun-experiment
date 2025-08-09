@@ -110,6 +110,8 @@ set_config_var_value() {
     sed -i "s|\\\${${varname}}|$value|g" "$config_file"
     # Replace $varname
     sed -i "s|\\\$${varname}\\b|$value|g" "$config_file"
+    # Replace <varname>
+    sed -i "s|<${varname}>|$value|g" "$config_file"
 }
 
 install_executable() {

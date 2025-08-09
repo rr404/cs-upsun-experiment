@@ -7,7 +7,9 @@ BOUNCER_CONFIG="$BOUNCER_FULL_NAME.yaml"
 BOUNCER_CONFIG_FULL_PATH="$CROWDSEC_DIR/bouncers/$BOUNCER_CONFIG"
 
 # Python virtual environment path
-VENV_PATH="${VENV_PATH:-${CROWDSEC_DIR}/../venv}"
+#VENV_PATH="${VENV_PATH:-${CROWDSEC_DIR}/../venv}"
+VENV_PATH="${VENV_PATH:-${BIN_DIR}/venv}"
+
 
 #==========================================================================#
 
@@ -35,11 +37,8 @@ source "$CROWDSEC_UTILS_SCRIPT" || {
 main() {
     msg info "Starting Fastly bouncer deployment"  
     setup_python_environment
-    install_bouncer
-    
-    # Setup bouncer: generating config with Fastly tokens
-    setup_fastly_worker
-    
+    install_and_setup_bouncer
+        
     # Test configuration
     if test_fastly_bouncer_config; then
         msg succ "Fastly bouncer deployed successfully!"
@@ -80,8 +79,8 @@ setup_python_environment() {
     msg succ "Python environment setup completed"
 }
 
-# Install Fastly bouncer via pip
-install_bouncer() {
+# Install Fastly bouncer via pip run config and link to LAPI
+install_and_setup_bouncer() {
     msg info "=== Installing Fastly bouncer package ==="
     
     # Validate we have write access
@@ -111,7 +110,7 @@ install_bouncer() {
     local fastly_tokens="${FASTLY_API_TOKENS:-<FASTLY_TOKEN>}"
     mkdir -p "$(dirname "$BOUNCER_CONFIG_FULL_PATH")"
     
-    if crowdsec-fastly-bouncer -g "$fastly_tokens" > "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
+    if crowdsec-fastly-bouncer -g "$fastly_tokens" -o "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
         chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
         msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
     else
