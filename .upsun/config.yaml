@@ -34,6 +34,13 @@ applications:
                 socket_family: tcp
                 protocol: http
    
+    eng:
+    # Where the app is located on the filesystem.
+        source:
+            root: "eng"
+
+        # The runtime the application uses.
+        type: "php:8.3"
 routes:
     # The routes of the project.
     # Each route describes how an incoming URL is going
