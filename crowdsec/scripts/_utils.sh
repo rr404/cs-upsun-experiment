@@ -139,9 +139,9 @@ link_bouncer_to_lapi() {
 }
 
 # Register a bouncer with CrowdSec and return the API key
-register_bouncer() {
+register_bouncer_to_lapi() {
     local bouncer_name="$1"
-    local cscli_cmd generated_api_key
+    local generated_api_key
     
     generated_api_key=$("${CSCLI_CMD} bouncer add ${bouncer_name}" -o raw 2>/dev/null || true)
     
@@ -157,9 +157,8 @@ register_bouncer() {
 
 # Delete a bouncer from CrowdSec
 delete_bouncer() {
-    local bouncer_name cscli_cmd
-    
-    bouncer_name="${1:-}"
+    local bouncer_name="$1"
+    local cscli_cmd
     
     # If no bouncer name provided, try to get it from the stored ID
     if [ -z "$bouncer_name" ] && [ -n "${CONFIG:-}" ] && [ -f "$CONFIG.id" ]; then

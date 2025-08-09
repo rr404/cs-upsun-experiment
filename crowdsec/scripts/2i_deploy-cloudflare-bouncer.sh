@@ -44,16 +44,18 @@ main() {
     install_bouncer
     
     # Setup bouncer: generating worker on CF + filling config with CF zones config
-    ## ...
+    setup_cloudflare_worker
     
-    # Step 6: Test configuration
-    if test_bouncer_config; then
+    # Test configuration
+    if $BOUNCER_BIN_FULL_PATH -c $BOUNCER_CONFIG_FULL_PATH -t 2>&1 | grep -q "config is valid"; then
         msg succ "Cloudflare bouncer deployed successfully!"
+        return 0
     else
         msg warn "Deployment completed with warnings"
+        return 1
     fi
     
-    # Step 7: Show summary
+    # Show deployment summary
     show_deployment_summary
 }
 
@@ -88,6 +90,7 @@ download_bouncer_release() {
     msg succ "Release downloaded and extracted successfully"
 }
 
+# assuming we're running this from within the extracted bouncer release directory
 install_bouncer() {
     msg info "=== Installing binary and initial configuration ==="
     
@@ -97,130 +100,43 @@ install_bouncer() {
     install_executable "$TMP_DIR/${BOUNCER_FULL_NAME}-${BOUNCER_VERSION}/${BOUNCER_FULL_NAME}" "$BOUNCER_BIN_FULL_PATH"
     msg succ "Binary installed: $BOUNCER_BIN_FULL_PATH"
 
-    # generate Bouncer API
-    ## ...
+    # generate Bouncer API and store in API_KEY for replacement in config
+    msg info "Registering bouncer to LAPI..."
+    API_KEY=$(register_bouncer_to_lapi "$BOUNCER_FULL_NAME")
+
     # Retrieve LAPI url from CrowdSec config
-    ## ...
+    CROWDSEC_LAPI_URL=$(get_param_value_from_yaml "$(CROWDSEC_DIR)/config.yaml" "api.server.listen_uri")
+
     ## Install the bouncer config file with envsubst LAPI uri and token
-    ## ...
-
-
-    # Copy and setup config file if it doesn't exist
-    if [ ! -f "$BOUNCER_CONFIG_FULL_PATH" ]; then
-        msg info "Setting up configuration file..."
-        cp "config/${BOUNCER_CONFIG}" "$BOUNCER_CONFIG_FULL_PATH"
-        chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
-        msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
-    else
-        msg info "Configuration file exists: $BOUNCER_CONFIG_FULL_PATH"
-    fi
+    msg info "Installing bouncer configuration file with LAPI URL= $(CROWDSEC_LAPI_URL) and bouncer API kKEY = $(API_KEY)"
+    envsubst < "config/${BOUNCER_CONFIG}" > "$BOUNCER_CONFIG_FULL_PATH"
+    chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
+    msg succ "Configuration file installed: $BOUNCER_CONFIG_FULL_PATH"
 }
 
-#==========================================================================#
-
-# Execute main deployment
-main "$@"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-############################################################################################################
-############################################################################################################
-
-## Function: Create API key with CrowdSec
-create_api_key() {
-    msg info "=== Creating CrowdSec API key ==="
+# Generate Cloudflare Worker configuration and deploy to Cloudflare
+setup_cloudflare_worker() {
+    require 'BOUNCER_CONFIG_FILE_FULL_PATH' 'BOUNCER_BIN_FULL_PATH'
+    local cloudflare_tokens
     
-    if set_api_key; then
-        msg succ "CrowdSec API key configured successfully"
+    cloudflare_tokens="${CLOUDFLARE_API_TOKENS:-}"
+    if [ -z "$cloudflare_tokens" ]; then
+        msg warn "CLOUDFLARE_API_TOKENS not set - skipping Worker deployment"
+        return 1
+    fi
+    
+    msg info "Generating Cloudflare Worker configuration and deploying to Cloudflare..."
+    
+    # Generate config and deploy Worker to Cloudflare
+    if "$BOUNCER_BIN_FULL_PATH" -g "$cloudflare_tokens" -o "$BOUNCER_CONFIG_FILE_FULL_PATH" 2>/dev/null; then
+        msg succ "Cloudflare Worker deployed and configuration generated: $BOUNCER_CONFIG_FILE_FULL_PATH"
         return 0
     else
-        msg warn "Failed to configure API key - manual configuration required"
+        msg err "Failed to generate Cloudflare Worker configuration and deploy"
         return 1
     fi
 }
 
-## Function: Update config with Cloudflare tokens and LAPI settings
-update_bouncer_config() {
-    msg info "=== Updating configuration with tokens and parameters ==="
-    
-    # Set Cloudflare API tokens if provided
-    if [ -n "${CLOUDFLARE_API_TOKENS:-}" ]; then
-        msg info "Configuring Cloudflare tokens..."
-        
-        # Check what variable name the actual config file expects for v1
-        if grep -q "cloudflare_token:" "$CONFIG" 2>/dev/null; then
-            set_config_var_value 'CLOUDFLARE_TOKEN' "$CLOUDFLARE_API_TOKENS"
-        elif grep -q "api_token:" "$CONFIG" 2>/dev/null; then
-            set_config_var_value 'API_TOKEN' "$CLOUDFLARE_API_TOKENS"
-        elif grep -q "token:" "$CONFIG" 2>/dev/null; then
-            set_config_var_value 'TOKEN' "$CLOUDFLARE_API_TOKENS"
-        else
-            # Fallback: try to add it manually to the config
-            msg warn "Cloudflare token field not found in config, adding manually"
-            echo "api_token: $CLOUDFLARE_API_TOKENS" >> "$CONFIG"
-        fi
-        msg succ "Cloudflare tokens configured"
-    else
-        msg warn "CLOUDFLARE_API_TOKENS not defined. Manual configuration required in $CONFIG"
-    fi
-
-    # Set the local LAPI URL
-    msg info "Configuring local LAPI URL..."
-    if grep -q "lapi_url:" "$CONFIG" 2>/dev/null; then
-        set_local_lapi_url 'LAPI_URL'
-        msg succ "LAPI URL configured"
-    elif grep -q "url:" "$CONFIG" 2>/dev/null; then
-        set_local_lapi_url 'URL'
-        msg succ "LAPI URL configured"
-    else
-        msg warn "LAPI URL field not found in config"
-    fi
-
-    # Update any port configurations
-    msg info "Updating port configurations..."
-    set_local_port
-    msg succ "Configuration updated successfully"
-}
-
-## Function: Test the final configuration
-test_bouncer_config() {
-     local config_file="$1"
-    
-    if ../usr/local/bin/crowdsec-cloudflare-worker-bouncer -c "$config_file" -t 2>&1 | grep -q "config is valid"; then
-        echo "config is ok"
-        return 0
-    else
-        echo "config is not valid"
-        return 1
-    fi
-}
-
-## Function: Display deployment summary
 show_deployment_summary() {
     msg info "=== Deployment Summary ==="
     msg info "Configuration file: $CONFIG"
@@ -234,5 +150,7 @@ show_deployment_summary() {
     fi
 }
 
+#==========================================================================#
 
-
+# Execute main deployment
+main "$@"
