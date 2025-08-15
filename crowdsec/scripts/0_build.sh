@@ -17,5 +17,4 @@ cp -R scripts/systemd.d/* ~/.config/systemd/user/multi-user.target.wants/
 
 # Ensure pip is available for Python3
 echo "Installing/upgrading pip..."
-python3 -m ensurepip --upgrade 2>/dev/null || echo "ensurepip not available or already installed"
-python3 -m pip install --upgrade pip
+python3.13 -m pip install --upgrade pip

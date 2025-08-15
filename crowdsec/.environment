@@ -23,7 +23,7 @@ export CLOUDFLARE_API_TOKENS="" # would need to be stored in secret // maybe wit
 ## Fastly doc: https://doc.crowdsec.net/u/bouncers/fastly
 
 ## API tokens: one or multiple separated by commas "token1,token2"
-export FASTLY_API_TOKENS="yJU5SRGV9re0yQgDpq0FM6XUkeWknui3"
+export FASTLY_API_TOKENS=""
 
 ####################################################################
 ### DO NOT EDIT THIS SECTION MANUALLY
