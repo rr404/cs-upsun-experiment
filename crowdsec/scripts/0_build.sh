@@ -15,8 +15,7 @@ echo "Copy Systemd user services..."
 cp -R scripts/systemd.d/* ~/.config/systemd/user/
 cp -R scripts/systemd.d/* ~/.config/systemd/user/multi-user.target.wants/
 
-# Pip install if necessary
-if [[ -n "${FASTLY_API_TOKENS:-}" ]]; then
-    # Download the latest version of pip
-    python3.13 -m pip install --upgrade pip
-fi
+# Ensure pip is available for Python3
+echo "Installing/upgrading pip..."
+python3 -m ensurepip --upgrade 2>/dev/null || echo "ensurepip not available or already installed"
+python3 -m pip install --upgrade pip

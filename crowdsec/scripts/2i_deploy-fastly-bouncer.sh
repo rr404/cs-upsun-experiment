@@ -62,8 +62,9 @@ setup_python_environment() {
         exit 1
     fi
     
-    if ! command -v pip3 >/dev/null && ! python3 -m pip --version >/dev/null 2>&1; then
-        msg err "pip3 is required but not found"
+    # Verify pip is available (should be installed during build phase)
+    if ! python3 -m pip --version >/dev/null 2>&1; then
+        msg err "pip is required but not found (should be installed during build)"
         exit 1
     fi
     
