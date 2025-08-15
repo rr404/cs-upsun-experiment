@@ -7,7 +7,7 @@ BOUNCER_CONFIG="$BOUNCER_FULL_NAME.yaml"
 BOUNCER_CONFIG_FULL_PATH="$CROWDSEC_DIR/bouncers/$BOUNCER_CONFIG"
 
 # Python virtual environment path
-VENV_PATH="${VENV_PATH:-${SCRIPTS_DIR}/venv}"
+VENV_PATH="${VENV_PATH:-${VAR_DIR}/pyvenv}"
 
 
 #==========================================================================#
@@ -130,32 +130,19 @@ install_and_setup_bouncer() {
     # Link bouncer to LAPI & update it's config with generated bouncer LAPI token
     msg info "Linking bouncer to LAPI and updating configuration..."
     link_bouncer_to_lapi "$BOUNCER_CONFIG_FULL_PATH" "$BOUNCER_FULL_NAME"
-}
+    msg info "Bouncer linked to LAPI"
 
-# Setup Fastly-specific configuration
-setup_fastly_worker() {
-    msg info "=== Setting up Fastly bouncer configuration ==="
-    
-    # Check if Fastly tokens are provided
-    if [ -n "${FASTLY_API_TOKENS:-}" ]; then
-        msg info "Fastly API tokens: Configured"
-        # Update config with actual tokens (replace placeholder)
-        set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'FASTLY_TOKEN' "$FASTLY_API_TOKENS"
-        msg succ "Fastly tokens configured in bouncer"
-    else
-        msg warn "FASTLY_API_TOKENS not set - manual configuration required in $BOUNCER_CONFIG_FULL_PATH"
-        msg info "You need to set the Fastly API tokens in the configuration file"
-    fi
+    msg info "Fastly API tokens: Configured"
+    # Update config with actual tokens (replace placeholder)
+    set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'FASTLY_TOKEN' "$FASTLY_API_TOKENS"
+    msg succ "Fastly tokens configured in bouncer"
+
 }
 
 # Test Fastly bouncer configuration
 test_fastly_bouncer_config() {
     msg info "=== Testing final configuration ==="
-    
-    # Activate virtual environment
-    # shellcheck source=/dev/null
-    . "$VENV_PATH/bin/activate"
-    
+        
     if [ -f "$BOUNCER_CONFIG_FULL_PATH" ]; then
         msg info "Testing Fastly bouncer configuration..."
         if crowdsec-fastly-bouncer -c "$BOUNCER_CONFIG_FULL_PATH" -t >/dev/null 2>&1; then
@@ -175,7 +162,6 @@ test_fastly_bouncer_config() {
 show_deployment_summary() {
     msg info "=== Deployment Summary ==="
     msg info "Configuration file: $BOUNCER_CONFIG_FULL_PATH"
-    msg info "Virtual environment: $VENV_PATH" 
     msg info "Bouncer: crowdsec-fastly-bouncer (installed via pip)"
     
     if [ -n "${FASTLY_API_TOKENS:-}" ]; then
@@ -185,8 +171,7 @@ show_deployment_summary() {
     fi
     
     msg info "To run the bouncer manually:"
-    msg info "  source $VENV_PATH/bin/activate"
-    msg info "  crowdsec-fastly-bouncer -c $BOUNCER_CONFIG_FULL_PATH"
+    msg info "  $BIN_DIR/crowdsec-fastly-bouncer -c $BOUNCER_CONFIG_FULL_PATH"
 }
 
 #==========================================================================#
