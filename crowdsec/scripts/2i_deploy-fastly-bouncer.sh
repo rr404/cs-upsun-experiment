@@ -102,9 +102,9 @@ install_and_setup_bouncer() {
         exit 1
     fi
     
-    # Move Fastly bouncer to its the bin directory
-    msg info "Moving Fastly bouncer to bin directory..."
-    mv "$VENV_PATH/bin/crowdsec-fastly-bouncer" "$BIN_DIR/"
+    # Copy Fastly bouncer to its the bin directory
+    msg info "Copying Fastly bouncer to bin directory..."
+    cp "$VENV_PATH/bin/crowdsec-fastly-bouncer" "$BIN_DIR/"
 
     # Copy the bouncer template configuration file if it exists
     msg info "Setting up bouncer configuration file..."
@@ -113,6 +113,15 @@ install_and_setup_bouncer() {
     # Generate basic config using the bouncer's -g flag
     mkdir -p "$(dirname "$BOUNCER_CONFIG_FULL_PATH")"
 
+    msg info "Generating bouncer configuration file..."
+    msg info "with token $FASTLY_API_TOKENS..."
+    msg info "Bouncer configuration file path: $BOUNCER_CONFIG_FULL_PATH"
+    msg info "using binary $BIN_DIR/crowdsec-fastly-bouncer"
+
+    # tweak while we fix bouncer
+    # Generate configuration file, it will fail because it created config file after, so we'll run it twice
+    "$BIN_DIR/crowdsec-fastly-bouncer" -g "$FASTLY_API_TOKENS" -o "$BOUNCER_CONFIG_FULL_PATH" -c "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null
+    # Now we should have config file
     if "$BIN_DIR/crowdsec-fastly-bouncer" -g "$FASTLY_API_TOKENS" -o "$BOUNCER_CONFIG_FULL_PATH" -c "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
         chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
         msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
