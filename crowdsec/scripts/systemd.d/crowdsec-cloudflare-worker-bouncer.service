@@ -4,7 +4,7 @@ After=crowdsec.service
 Requires=crowdsec.service
 
 [Service]
-WorkingDirectory=/app/cs/bin
+WorkingDirectory=/app/cs/usr/local/bin
 Type=exec
 Environment=LC_ALL=C LANG=C
 ExecStartPre=/app/cs/usr/local/bin/crowdsec-cloudflare-worker-bouncer -c /app/cs/etc/crowdsec/bouncers/crowdsec-cloudflare-worker-bouncer.yaml -t

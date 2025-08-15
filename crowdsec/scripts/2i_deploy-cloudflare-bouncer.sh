@@ -10,7 +10,7 @@ DOWNLOAD_URL="https://github.com/crowdsecurity/cs-cloudflare-worker-bouncer/rele
 BOUNCER_CONFIG="$BOUNCER_FULL_NAME.yaml"
 BOUNCER_CONFIG_FULL_PATH="$CROWDSEC_DIR/bouncers/$BOUNCER_CONFIG"
 
-BOUNCER_BIN_FULL_PATH="${BOUNCER_BIN_FULL_PATH:-${BIN_DIR:-/app/cs/bin}/$BOUNCER_FULL_NAME}"
+BOUNCER_BIN_FULL_PATH="${BOUNCER_BIN_FULL_PATH:-${BIN_DIR:-/app/cs/usr/local/bin}/$BOUNCER_FULL_NAME}"
 
 #==========================================================================#
 
