@@ -8,6 +8,9 @@ applications:
         # The runtime the application uses.
         #stack: ["gettext", "go", "rsyslog", "netcat", "gnumake", "tcpdump", "python3.13"]
         stack: ["gettext", "python3.13"]
+        dependencies:
+            python3:
+                pipenv: '*'
 
         # Configuration of the build of the application.
         build:
@@ -24,6 +27,8 @@ applications:
         hooks:
             build: |
                 set -eu
+                echo "Installing/upgrading pip..."
+                python -m pip install --upgrade pip
                 ./scripts/0_build.sh
             deploy: |
                 set -eu
