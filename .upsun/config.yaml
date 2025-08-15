@@ -24,8 +24,6 @@ applications:
         hooks:
             build: |
                 set -eu
-                echo "Installing/upgrading pip..."
-                python -m pip install --upgrade pip
                 ./scripts/0_build.sh
             deploy: |
                 set -eu

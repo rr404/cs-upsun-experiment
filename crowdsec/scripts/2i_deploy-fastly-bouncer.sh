@@ -7,8 +7,7 @@ BOUNCER_CONFIG="$BOUNCER_FULL_NAME.yaml"
 BOUNCER_CONFIG_FULL_PATH="$CROWDSEC_DIR/bouncers/$BOUNCER_CONFIG"
 
 # Python virtual environment path
-#VENV_PATH="${VENV_PATH:-${CROWDSEC_DIR}/../venv}"
-VENV_PATH="${VENV_PATH:-${BIN_DIR}/venv}"
+VENV_PATH="${VENV_PATH:-${SCRIPTS_DIR}/venv}"
 
 
 #==========================================================================#
@@ -62,12 +61,6 @@ setup_python_environment() {
         exit 1
     fi
     
-    # Verify pip is available (should be installed during build phase)
-    if ! python3 -m pip --version >/dev/null 2>&1; then
-        msg err "pip is required but not found (should be installed during build)"
-        exit 1
-    fi
-    
     # Create virtual environment
     if [ ! -d "$VENV_PATH" ]; then
         msg info "Creating Python virtual environment at $VENV_PATH"
@@ -77,6 +70,12 @@ setup_python_environment() {
         }
     fi
     
+     # Verify pip is available (should be installed during build phase)
+    if ! "$VENV_PATH/bin/pip" --version >/dev/null 2>&1; then
+        msg err "pip is required but not found (should be installed during build)"
+        exit 1
+    fi
+
     msg succ "Python environment setup completed"
 }
 
@@ -93,16 +92,20 @@ install_and_setup_bouncer() {
     . "$VENV_PATH/bin/activate"
     
     # Upgrade pip first
-    pip install --upgrade pip >/dev/null 2>&1 || msg warn "Failed to upgrade pip"
-    
+    "$VENV_PATH/bin/pip" install --upgrade pip >/dev/null 2>&1 || msg warn "Failed to upgrade pip"
+
     # Install the bouncer
-    if pip install crowdsec-fastly-bouncer >/dev/null 2>&1; then
+    if "$VENV_PATH/bin/pip" install crowdsec-fastly-bouncer >/dev/null 2>&1; then
         msg succ "Fastly bouncer installed successfully"
     else
         msg err "Failed to install crowdsec-fastly-bouncer"
         exit 1
     fi
     
+    # Move Fastly bouncer to its the bin directory
+    msg info "Moving Fastly bouncer to bin directory..."
+    mv "$VENV_PATH/bin/crowdsec-fastly-bouncer" "$BIN_DIR/"
+
     # Copy the bouncer template configuration file if it exists
     msg info "Setting up bouncer configuration file..."
     assert_can_write_to_path "$BOUNCER_CONFIG_FULL_PATH"
@@ -111,7 +114,7 @@ install_and_setup_bouncer() {
     local fastly_tokens="${FASTLY_API_TOKENS:-<FASTLY_TOKEN>}"
     mkdir -p "$(dirname "$BOUNCER_CONFIG_FULL_PATH")"
     
-    if crowdsec-fastly-bouncer -g "$fastly_tokens" -o "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
+    if "$BIN_DIR/crowdsec-fastly-bouncer" -g "$fastly_tokens" -o "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
         chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
         msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
     else

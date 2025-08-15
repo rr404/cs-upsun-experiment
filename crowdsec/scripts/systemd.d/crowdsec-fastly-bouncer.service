@@ -7,8 +7,8 @@ Requires=crowdsec.service
 WorkingDirectory=/app/cs/bin
 Type=exec
 Environment=LC_ALL=C LANG=C
-ExecStartPre=/app/cs/venv/bin/crowdsec-fastly-bouncer -c /app/cs/etc/crowdsec/bouncers/crowdsec-fastly-bouncer.yaml -t
-ExecStart=/app/cs/venv/bin/crowdsec-fastly-bouncer -c /app/cs/etc/crowdsec/bouncers/crowdsec-fastly-bouncer.yaml
+ExecStartPre=/app/cs/bin/crowdsec-fastly-bouncer -c /app/cs/etc/crowdsec/bouncers/crowdsec-fastly-bouncer.yaml -t
+ExecStart=/app/cs/bin/crowdsec-fastly-bouncer -c /app/cs/etc/crowdsec/bouncers/crowdsec-fastly-bouncer.yaml
 Restart=always
 RestartSec=60
 User=%i
