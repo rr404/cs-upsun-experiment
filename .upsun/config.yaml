@@ -7,10 +7,7 @@ applications:
             root: "crowdsec"
         # The runtime the application uses.
         #stack: ["gettext", "go", "rsyslog", "netcat", "gnumake", "tcpdump", "python3.13"]
-        stack: ["gettext", "python3.13"]
-        dependencies:
-            python3:
-                pipenv: '*'
+        stack: ["gettext", "python3.13", "pip"]
 
         # Configuration of the build of the application.
         build:
