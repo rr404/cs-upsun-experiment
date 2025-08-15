@@ -114,7 +114,7 @@ install_and_setup_bouncer() {
     local fastly_tokens="${FASTLY_API_TOKENS:-<FASTLY_TOKEN>}"
     mkdir -p "$(dirname "$BOUNCER_CONFIG_FULL_PATH")"
 
-    if "$BIN_DIR/crowdsec-fastly-bouncer" -g "$fastly_tokens" -c -o "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
+    if "$BIN_DIR/crowdsec-fastly-bouncer" -g "$fastly_tokens" -c "$BOUNCER_CONFIG_FULL_PATH" -o "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
         chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
         msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
     else
