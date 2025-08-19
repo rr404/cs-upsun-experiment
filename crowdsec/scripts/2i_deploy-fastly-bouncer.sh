@@ -114,7 +114,7 @@ install_and_setup_bouncer() {
     mkdir -p "$(dirname "$BOUNCER_CONFIG_FULL_PATH")"
 
     msg info "Generating bouncer configuration file..."
-    msg info "with token $FASTLY_API_TOKENS..."
+    msg info "with token ${FASTLY_API_TOKENS:0:5}..."
     msg info "Bouncer configuration file path: $BOUNCER_CONFIG_FULL_PATH"
     msg info "using binary $BIN_DIR/crowdsec-fastly-bouncer"
 
