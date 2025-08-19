@@ -114,6 +114,24 @@ set_config_var_value() {
     sed -i "s|<${varname}>|$value|g" "$config_file"
 }
 
+# Change parameter value in config files (e.g., YAML)
+# Usage: change_param <filename> <param_name> <new_value>
+# Example: change_param config.yaml "toto" "my new value"
+# Changes "toto: old value" to "toto: my new value"
+change_param() {
+    local file="$1"
+    local param="$2"
+    local new_value="$3"
+    
+    if [ ! -f "$file" ]; then
+        msg err "File not found: $file"
+        return 1
+    fi
+    
+    # Use sed to replace everything after "param:" with the new value
+    sed -i "s|^${param}:.*|${param}: ${new_value}|" "$file"
+}
+
 install_executable() {
     local source_path="$1"
     local dest_path="$2"

@@ -145,6 +145,21 @@ install_and_setup_bouncer() {
     set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'FASTLY_TOKEN' "$FASTLY_API_TOKENS"
     msg succ "Fastly tokens configured in bouncer"
 
+    # if recaptcha config variable present update config
+    if [ -n "${RECAPTCHA_SECRET:-}" ] && [ -n "${RECAPTCHA_SITE_KEY:-}" ]; then
+        msg info "updating recaptcha configuration..."
+        change_param "$BOUNCER_CONFIG_FULL_PATH" "recaptcha_secret_key" "$RECAPTCHA_SECRET"
+        change_param "$BOUNCER_CONFIG_FULL_PATH" "recaptcha_site_key" "$RECAPTCHA_SITE_KEY"
+        msg succ "Recaptcha configuration updated in bouncer"
+    else
+        msg info "Recaptcha configuration not enabled, to enable it add variables RECAPTCHA_SECRET and RECAPTCHA_SITE_KEY"
+    fi
+
+    msg info "Updating cache and log path"
+    mkdir -p "$VAR_DIR/cache"
+    change_param "$BOUNCER_CONFIG_FULL_PATH" "cache_path" "$VAR_DIR/cache"
+    change_param "$BOUNCER_CONFIG_FULL_PATH" "LOG_PATH" "$LOG_DIR"
+    msg succ "Cache and log paths updated in bouncer configuration"
 }
 
 # Test Fastly bouncer configuration
