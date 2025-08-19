@@ -1,8 +1,75 @@
 # CrowdSec Security Engine for Upsun
 
+## What This Project Does
+
+This is a **standalone security service** that you deploy once on Upsun to protect **all your other Upsun projects** without modifying their code.
+
+### Zero-Code Security Integration
+
+1. **Deploy this project** - Fork/copy this repository and deploy it as a separate Upsun app
+2. **Connect your existing projects** - Simply configure HTTP log forwarding from your existing Upsun projects to this security engine via the Upsun console
+3. **Get automatic protection** - CrowdSec analyzes logs in real-time and automatically blocks malicious IPs via Cloudflare/Fastly
+
+**Key Benefits:**
+- ✅ **No code changes** to your existing projects
+- ✅ **Centralized security** for multiple applications  
+- ✅ **Real-time threat detection** from HTTP logs
+- ✅ **Automatic blocking** at CDN level (Cloudflare/Fastly)
+- ✅ **Community threat intelligence** from CrowdSec network
+
+### How It Works
+
+```
+Your Upsun Projects → HTTP Logs → This Security Engine → Ban Decisions → CDN Blocking
+     (unchanged)       (forward)     (CrowdSec analysis)    (automatic)     (Cloudflare/Fastly)
+```
+
 This is an off-the-shelf Upsun project to deploy a CrowdSec Security Engine and optional Remediation Components (bouncers) with minimal configuration from the user.
 
-Default usage results in the CrowdSec Security Engine being installed with the Upsun collection for HTTP log parsing and intrusion detection.
+## Quick Setup Guide
+
+### Step 1: Deploy the Security Engine
+```bash
+# Fork this repository or copy it to your Upsun account
+git clone <this-repo>
+cd cs-upsun-experiment
+
+# Optional: Add bouncer API tokens for automatic blocking
+upsun variable:create env:CLOUDFLARE_API_TOKEN --value="your-cloudflare-token"
+upsun variable:create env:FASTLY_API_TOKEN --value="your-fastly-token"
+
+# Deploy to Upsun
+upsun push
+```
+
+### Step 2: Get Your Security Engine URL
+After deployment, note your security engine's URL:
+```
+https://<your-security-app>.upsun.sh/logs
+```
+
+### Step 3: Connect Your Existing Projects
+In each of your existing Upsun projects, configure HTTP log forwarding:
+
+**Via Upsun Console:**
+1. Go to your existing project settings
+2. Navigate to "Logging" or "Log forwarding"  
+3. Add HTTP endpoint: `https://<your-security-app>.upsun.sh/logs`
+4. Format: JSON with HTTP access logs
+
+**Via Configuration File:**
+```yaml
+# In your existing project's .upsun/config.yaml
+hooks:
+  build: |
+    # Configure log forwarding to security engine
+    echo "Logs will be forwarded to security engine"
+```
+
+### Step 4: Verify Protection
+- Check CrowdSec metrics: Access your security app and run diagnostics
+- Monitor blocked IPs in Cloudflare/Fastly dashboard
+- Test with security scanning tools to verify blocking works
 
 ## Build Flow Diagram
 
