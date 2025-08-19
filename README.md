@@ -1,119 +1,205 @@
+# CrowdSec Security Engine for Upsun
+
+This is an off-the-shelf Upsun project to deploy a CrowdSec Security Engine and optional Remediation Components (bouncers) with minimal configuration from the user.
+
+Default usage results in the CrowdSec Security Engine being installed with the Upsun collection for HTTP log parsing and intrusion detection.
+
+## Build Flow Diagram
+
+The following flowchart shows the deployment process and conditional bouncer installation based on environment variables:
+
+┌───────┐
+│ BUILD │
+ ───────
+    │
+    ▼
+[ init project hierarchy]
+ > Create directory structure to host installed components
+ > Copy systemd services
+    │
+    ▼
+┌────────┐
+│ DEPLOY │
+ ────────
+    │
+    ▼
+[ CrowdSec Setup ]
+  // TODO check if working & fix : if no lock file named "${$TMP_DIR}/LAST_INSTALLED_${CROWDSEC_VERSION}${REINSTALL_SUFFIX}.lock"
+    > download release based on CROWDSEC_VERSION
+    > install and configure crowdsec in custom hierarchy (/app/cs/etc/crowdsec/ ++)
+  > start crowdsec service
+    │
+    ▼
+[ Bouncers setup ]
+  if CLOUDFLARE_API_TOKENS variable found (CLOUDFLARE_API_TOKENS or/and FASTLY_API_TOKENS)
+    > Download bouncer release
+    > Install & config bouncer
+        > copy config file template
+        > update LAPI URL
+        > link to crowdsec LAPI
+    > Setup bouncer
+        > Generate cloudflare specific config with command (it might deploy the worker code at that moment, not sure)
+  // TODO run service
+
+  if FASTLY_API_TOKENS variable found
+    > setup python env
+    >  Install & setup bouncer
+        > installing bouncer package
+        > copying binary to other folder
+        > generating config
+        > updateing config variables to work in this hierarchy
+// TODO run service
 
 
-# Modern WordPress development and deployment workflow
 
-This repository hosts the codebase for two sites, both
+#### 1. Version-Based Caching
+```bash
+# Implementation in scripts
+CROWDSEC_VERSION_FILE="/app/cs/.installed_version"
+CURRENT_VERSION=$(cat "$CROWDSEC_VERSION_FILE" 2>/dev/null || echo "none")
 
-- are built using [WordPress.org](https://wordpress.org)
-- are deployed on [Upsun.com](https://upsun.com) in [Multi-App setup](https://docs.upsun.com/create-apps/multi-app.html)
-- have their codebase managed via [Composer](https://getcomposer.org), thanks to [`johnpbloch/wordpress`](https://github.com/johnpbloch/wordpress) and [WordPress Packagist](https://wpackagist.org)
-- have their dependencies automatically upgraded by [Dependabot](https://dependabot.com)
-- have their Dependabot PRs automatically merged by [Mergify](https://mergify.com) when builds pass
-- have new code deployed to production automatically on every PR merge
-- use [Redis](https://redis.io) as back-end caching
-- use [Cloudflare](https://www.cloudflare.com) as CDN
-- use [GitHub Actions](https://github.com/features/actions) as CI/CD and Cron Scheduler
+if [ "$CURRENT_VERSION" = "$CROWDSEC_VERSION" ] && [ -f "/app/cs/cscli" ]; then
+    echo "CrowdSec $CROWDSEC_VERSION already installed, skipping download"
+else
+    # Perform installation
+    echo "$CROWDSEC_VERSION" > "$CROWDSEC_VERSION_FILE"
+fi
+```
 
-In addition to the above:
+===================================================================
+#### 2. Binary Existence Checks
+```bash
+# Skip installation if binaries exist and match expected version
+if [ -f "/app/cs/cscli" ] && [ -f "/app/cs/crowdsec" ]; then
+    INSTALLED_VERSION=$(/app/cs/cscli version --output json | jq -r '.version')
+    if [ "$INSTALLED_VERSION" = "$CROWDSEC_VERSION" ]; then
+        echo "CrowdSec binaries up to date"
+        exit 0
+    fi
+fi
+```
 
-- the `ita` site uses [Elasticsearch](https://www.elastic.co/elasticsearch/)
-- the `eng` site uses [Algolia](https://www.algolia.com)
+#### 3. Configuration Change Detection
+```bash
+# Use checksums to detect configuration changes
+CONFIG_HASH=$(find /app/cs/etc/crowdsec -type f -name "*.yaml" -exec sha256sum {} \; | sort | sha256sum)
+LAST_HASH=$(cat /app/cs/.config_hash 2>/dev/null || echo "none")
 
-## WordPress
+if [ "$CONFIG_HASH" != "$LAST_HASH" ]; then
+    echo "Configuration changed, updating services"
+    echo "$CONFIG_HASH" > /app/cs/.config_hash
+    systemctl --user restart crowdsec
+fi
+```
 
-WordPress remains by far the CMS that is easiest to adopt, and that provides a fast time to market in the majority of 
-use cases. There is so much high quality stuff out there for WordPress, be it OSS or Premium, that one can have 
-beautiful sites powered by an easy-to-use CMS up and running in no time.
+### Force Rebuild Mechanisms
 
-## Upsun.com
+#### 1. Environment Variable Triggers
+```bash
+# Add to deployment scripts
+if [ "$FORCE_REBUILD" = "true" ]; then
+    echo "Force rebuild requested, removing existing installation"
+    rm -rf /app/cs/
+    rm -f /app/cs/.installed_version
+    rm -f /app/cs/.config_hash
+fi
+```
 
-Upsun provide an incredibly flexible and powerful PaaS. As they like to call it, it is the Idea-to-Cloud PaaS. With a 
-GitHub integration, you can have a child environment cloned from your a parent environment (the root of the tree is 
-usually the production environment) for each pull request, and a Status Check that runs a build on Upsun.com out of the 
-new branch, so to verify that the changes do not break anything. Upon merging a PR, the code is deployed straight to the
-parent environment.
+#### 2. Version Upgrade Detection
+```bash
+# Automatic force rebuild on version changes
+CROWDSEC_LATEST=$(curl -s https://api.github.com/repos/crowdsecurity/crowdsec/releases/latest | jq -r '.tag_name')
+CROWDSEC_CURRENT=$(cat /app/cs/.installed_version 2>/dev/null || echo "none")
 
-## Dependabot
+if [ "$CROWDSEC_LATEST" != "$CROWDSEC_CURRENT" ] && [ "$AUTO_UPGRADE" = "true" ]; then
+    echo "New CrowdSec version available: $CROWDSEC_LATEST"
+    export FORCE_REBUILD=true
+fi
+```
 
-Now part of the GitHub family, it provides a free plan for public repositories, and it supports PHP+Composer. You can 
-configure it to decide what kind of upgrades you want to perform on your dependencies, and the bot will issue pull 
-requests periodically, avoiding stale dependencies.
+#### 3. Manual Force Rebuild Commands
+```bash
+# Utility script: scripts/force-rebuild.sh
+#!/bin/bash
+echo "Forcing complete rebuild..."
+export FORCE_REBUILD=true
+export FORCE_BOUNCER_REBUILD=true
+./0_build.sh
+./1_deploy-crowdsec.sh
+./2_deploy-bouncer.sh
+```
 
-## Mergify
+### Recommended Environment Variables for Optimization
 
-This service, too, provides a free plan for public repositories. You can configure it with a number of conditions that, 
-when met, will trigger an automatic merge of your pull requests.
+#### Build Control Variables
+- `FORCE_REBUILD=true` - Force complete rebuild regardless of existing installation
+- `FORCE_BOUNCER_REBUILD=true` - Force bouncer reinstallation only
+- `SKIP_VERSION_CHECK=true` - Skip version comparison checks
+- `AUTO_UPGRADE=true` - Automatically upgrade to latest versions
+- `PRESERVE_CONFIG=true` - Keep existing configuration during upgrades
 
-## Redis
+#### Cache Control Variables  
+- `ENABLE_BUILD_CACHE=true` - Enable build optimization features
+- `CACHE_DIR=/app/cs/.cache` - Directory for build cache files
+- `BUILD_TIMEOUT=300` - Maximum time to wait for build operations
 
-Redis is an open source, in-memory data structure store, that here I use as a back-end cache system via the
-[Redis Object Cache](https://wordpress.org/plugins/redis-cache/) plugin. It is 
-[easy to adopt with Upsun](https://docs.upsun.com/add-services/redis.html), as it is one of the many containerized 
-services that you can add to your project.
+### Implementation Priority
 
-## Cloudflare
+1. **Phase 1**: Version-based caching for CrowdSec engine
+2. **Phase 2**: Bouncer-specific optimization with separate version tracking
+3. **Phase 3**: Configuration change detection and selective service restarts
+4. **Phase 4**: Advanced caching with dependency management
 
-Cloudflare is one of the CDNs best [supported by Upsun](https://docs.upsun.com/domains/cdn.html); it is also one
-that provides a good free plan. When you combine that with the awesome plugin
-[WP Cloudflare Super Page Cache](https://wordpress.org/plugins/wp-cloudflare-page-cache/), choosing Cloudflare for your 
-personal sites becomes really a no-brainer.
+These optimizations would significantly reduce build times while maintaining the flexibility to force rebuilds when needed, such as security updates or major version changes.
 
-## WordPress translation files and Composer
+## Development Commands
 
-One of the sites is not in English and uses translation files for WordPress core, themes, and plugins for an optimal 
-setup. WordPress Packagist does not currently provide such files, but—–thankfully–—the OSS community never rests, and 
-[`inpsyde/wp-translation-downloader`](https://github.com/inpsyde/wp-translation-downloader) is a great Composer plugin 
-to manage WordPress translations.
+### CrowdSec Development
+```bash
+# Build systemd services and prepare environment
+./scripts/0_build.sh
 
-## GitHub Actions
+# Deploy CrowdSec engine
+./scripts/1_deploy-crowdsec.sh
 
-It seemed like the obvious choice. Currently, no particular CI/CD task is implemented, as Upsun provide their own 
-built-in CI/CD for builds and deployments. Moreover, I do not require particular testing at present, so I am not using 
-Actions for that either. However, I am using it as Cron Scheduler, to perform regular tasks on my Upsun project.
+# Deploy bouncer (requires BOUNCER_TYPE env var: cloudflare or fastly)
+./scripts/2_deploy-bouncer.sh
 
-Although Upsun allow you to do that by defining Cron Jobs 
-[on their own platform](https://docs.upsun.com/create-apps/app-reference/single-runtime-image.html#crons), I chose to 
-have this functionality decoupled from Upsun.
+# Individual bouncer deployments
+./scripts/2i_deploy-cloudflare-worker-bouncer.sh  # Binary-based bouncer
+./scripts/2i_deploy-fastly-bouncer.sh            # Python pip-based bouncer
+```
 
-## Elasticsearch
+### Service Management
+```bash
+# CrowdSec service (systemd user services)
+systemctl --user status crowdsec
+systemctl --user start crowdsec
+systemctl --user stop crowdsec
+systemctl --user restart crowdsec
 
-[Elasticsearch](https://www.elastic.co/elasticsearch/) is a distributed, RESTful search and analytics engine that 
-centrally stores your data for lightning fast search, fine‑tuned relevancy, and powerful analytics that scale with ease.
-[Upsun allows a very easy adoption of the service](https://docs.upsun.com/add-services/elasticsearch.html). This 
-experimental project uses the 
-[last open-source version of Elasticsearch](https://en.wikipedia.org/wiki/Elasticsearch#Licensing_changes) (7.10). 
-[ElasticPress](https://github.com/10up/ElasticPress) provides a seamless integration with WordPress.
+# CrowdSec CLI operations (from /app/cs directory)
+/app/cs/cscli --config /app/cs/etc/crowdsec/config.yaml metrics
+/app/cs/cscli --config /app/cs/etc/crowdsec/config.yaml decisions list
+/app/cs/cscli --config /app/cs/etc/crowdsec/config.yaml bouncers list
+```
 
-## Algolia
+## Environment Variables
 
-[Algolia](https://www.algolia.com/doc/faq/why/what-makes-algolia-different-than-elasticsearch-or-solr/) is a commercial 
-service similar to ElasticSearch or Solr, but that claims to be up to 200x faster than Elasticsearch. There is a
-[free plan](https://www.algolia.com/pricing) that is definitely suitable for small sites. Algolia
-[no longer maintains an official WordPress plugin](https://www.algolia.com/doc/integration/wordpress/indexing/setting-up-algolia/) 
-but their former official plugin was forked and it is now known as
-[WP Search with Algolia](https://wordpress.org/plugins/wp-search-with-algolia/). It is actively maintained and works 
-well as far as we have been able to ascertain.
+### User Configuration (Optional Bouncer Setup)
+- `CLOUDFLARE_API_TOKEN` - Cloudflare API token for Worker bouncer
+- `FASTLY_API_TOKEN` - Fastly API token(s) (comma-separated for multiple)
 
-## Rudimentary "distro" support for WordPress
+### Build Control
+- `CROWDSEC_VERSION` - CrowdSec version to install (default: latest stable)
+- `BOUNCER_TYPE` - Type of bouncer to deploy ("cloudflare" or "fastly")
+- `FORCE_REBUILD` - Force complete rebuild (true/false)
+- `AUTO_UPGRADE` - Automatically upgrade to latest versions (true/false)
 
-"Distros" or "install profiles" are essentially a way to have your own default installation configuration. Whilst 
-[some softwares have built-in support](https://www.drupal.org/docs/drupal-distributions) for that, WordPress does not. 
-Our rudimentary support for this in WordPress relies on two things: a 
-[bespoke section](https://github.com/upsun/modern-wp-upsun-experiment/blob/main/ita/composer.json#L50-L63) in the 
-`composer.json` file and [a script](https://github.com/upsun/modern-wp-upsun-experiment/blob/main/ita/scripts/deploy.sh)
-that uses the information in that section to perform some initial setup. The script is then executed as 
-[part of the `deploy` hook](https://github.com/upsun/modern-wp-upsun-experiment/blob/main/.upsun/config.yaml#L98) in 
-Upsun. If you are wondering why we didn't simply use the `scripts.postbuild` section in `composer.json` to run such a 
-script, the reason is that during the `build` phase in Upsun (when `composer` is run) the database service is not yet 
-available.
+## Architecture
 
-## Jetpack's identity crisis averted
-
-You may know that Jetpack can suffer from 
-[identity crisis](https://jetpack.com/support/safe-mode/#what-is-an-identity-crisis). This template is configured so 
-that non-production environments on Upsun automatically adopt 
-[Offline Mode](https://jetpack.com/support/development-mode/), thus averting the identity crisis. It would've been 
-preferable to use [Staging Mode](https://jetpack.com/support/staging-sites/) instead of Offline Mode, but it turns 
-out—after a long chat with WordPress support—that just adding `define( 'JETPACK_STAGING_MODE', true );` to 
-`wp-config.php` for a site that already has an active production connection to Jetpack doesn't actually put that site in
-Safe Mode automatically as described, but still causes the identity crisis.
+- **Installation Directory**: `/app/cs/` (user-writable)
+- **Configuration**: `/app/cs/etc/crowdsec/` (replicates `/etc/crowdsec`)
+- **Binaries**: `/app/cs/bin/` (bouncer binaries)
+- **Services**: systemd user services (no root privileges required)
+- **Network**: HTTP upstream endpoint for log ingestion from other Upsun projects
