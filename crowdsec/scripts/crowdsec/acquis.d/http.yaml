@@ -5,5 +5,5 @@ auth_type: headers
 headers:
     cslogfw: totoIsNotDead
 labels:
-  type: nginx
-log-level: trace
+  type: upsun-httplog
+log_level: trace
