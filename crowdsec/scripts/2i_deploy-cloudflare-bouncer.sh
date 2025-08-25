@@ -110,7 +110,7 @@ install_bouncer() {
     
     # Link bouncer to LAPI & update it's config with generated bouncer LAPI token
     msg info "Linking bouncer to LAPI and updating configuration..."
-    link_bouncer_to_lapi "$BOUNCER_CONFIG_FULL_PATH" "$BOUNCER_FULL_NAME"
+    link_bouncer_to_lapi "$BOUNCER_CONFIG_FULL_PATH" "$BOUNCER_FULL_NAME" "lapi_key"
 }
 
 # Generate Cloudflare Worker configuration and deploy to Cloudflare

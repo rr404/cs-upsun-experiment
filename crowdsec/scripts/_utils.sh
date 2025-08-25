@@ -118,6 +118,8 @@ set_config_var_value() {
 # Usage: change_param <filename> <param_name> <new_value>
 # Example: change_param config.yaml "toto" "my new value"
 # Changes "toto: old value" to "toto: my new value"
+# !!! Only use if you're certain there are no other sub param called similarly
+## If you have place holders in the file, use: set_config_var_value instead
 change_param() {
     local file="$1"
     local param="$2"
@@ -151,6 +153,7 @@ install_executable() {
 link_bouncer_to_lapi() {
     local bouncer_config_fullpath="$1"
     local bouncer_name="${2}-upsun-$(date +%s)"
+    local api_key_param_name="$3"
     local api_key
 
     # Use the generic bouncer registration function
@@ -158,7 +161,7 @@ link_bouncer_to_lapi() {
         msg succ "API Key successfully created"
         msg info "Saving API Key to bouncer configuration file"
         msg info $(cat $bouncer_config_fullpath)
-        set_config_var_value $bouncer_config_fullpath 'API_KEY' "$api_key"
+        change_param $bouncer_config_fullpath "$api_key_param_name" "$api_key"
     else
         msg err "Failed to register bouncer with CrowdSec"
         return 1        

@@ -88,9 +88,7 @@ install_and_setup_bouncer() {
     
     # Activate virtual environment and install bouncer
     msg info "Installing crowdsec-fastly-bouncer via pip..."
-    # shellcheck source=/dev/null
-    . "$VENV_PATH/bin/activate"
-    
+        
     # Upgrade pip first
     "$VENV_PATH/bin/pip" install --upgrade pip >/dev/null 2>&1 || msg warn "Failed to upgrade pip"
 
@@ -113,10 +111,13 @@ install_and_setup_bouncer() {
     # Generate basic config using the bouncer's -g flag
     mkdir -p "$(dirname "$BOUNCER_CONFIG_FULL_PATH")"
 
+    msg info "Removing existing configuration file if any..."
+    rm -f "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null
+
     msg info "Generating bouncer configuration file..."
     msg info "with token ${FASTLY_API_TOKENS:0:5}..."
     msg info "Bouncer configuration file path: $BOUNCER_CONFIG_FULL_PATH"
-    msg info "using binary $BIN_DIR/crowdsec-fastly-bouncer"
+    msg info "using binary $BIN_DIR/crowdsec-fastly-bouncer"    
 
     # tweak while we fix bouncer
     # Generate configuration file, it will fail because it created config file after, so we'll run it twice
@@ -133,11 +134,11 @@ install_and_setup_bouncer() {
     # Retrieve LAPI url from CrowdSec config and save it to bouncer config
     msg info "Setting LAPI URL in bouncer configuration..."
     CROWDSEC_LAPI_URL=$(get_param_value_from_yaml "${CROWDSEC_DIR}/config.yaml" "api.server.listen_uri")
-    set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'CROWDSEC_LAPI_URL' "http://${CROWDSEC_LAPI_URL}"
+    change_param "$BOUNCER_CONFIG_FULL_PATH" 'lapi_key' "http://${CROWDSEC_LAPI_URL}"
     
     # Link bouncer to LAPI & update it's config with generated bouncer LAPI token
     msg info "Linking bouncer to LAPI and updating configuration..."
-    link_bouncer_to_lapi "$BOUNCER_CONFIG_FULL_PATH" "$BOUNCER_FULL_NAME"
+    link_bouncer_to_lapi "$BOUNCER_CONFIG_FULL_PATH" "$BOUNCER_FULL_NAME" "lapi_key"
     msg info "Bouncer linked to LAPI"
 
     msg info "Fastly API tokens: Configured"
@@ -157,8 +158,8 @@ install_and_setup_bouncer() {
 
     msg info "Updating cache and log path"
     mkdir -p "$VAR_DIR/cache"
-    change_param "$BOUNCER_CONFIG_FULL_PATH" "cache_path" "$VAR_DIR/cache"
-    change_param "$BOUNCER_CONFIG_FULL_PATH" "LOG_PATH" "$LOG_DIR"
+    change_param "$BOUNCER_CONFIG_FULL_PATH" "cache_path" "$VAR_DIR/cache/fastly-cache.json"
+    change_param "$BOUNCER_CONFIG_FULL_PATH" "log_file" "$LOG_DIR/$BOUNCER_FULL_NAME.log"
     msg succ "Cache and log paths updated in bouncer configuration"
 }
 
