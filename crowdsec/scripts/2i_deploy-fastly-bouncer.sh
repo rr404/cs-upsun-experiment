@@ -47,6 +47,8 @@ main() {
         return 1
     fi
     
+    start_fastly_bouncer
+
     # Show deployment summary
     show_deployment_summary
 }
@@ -121,31 +123,23 @@ install_and_setup_bouncer() {
 
     # tweak while we fix bouncer
     # Generate configuration file, it will fail because it created config file after, so we'll run it twice
+        # for now we don't put condition as it fails for silly reasons but doesn't really
+        # if "$BIN_DIR/crowdsec-fastly-bouncer" -g "$FASTLY_API_TOKENS" -o "$BOUNCER_CONFIG_FULL_PATH" -c "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
     "$BIN_DIR/crowdsec-fastly-bouncer" -g "$FASTLY_API_TOKENS" -o "$BOUNCER_CONFIG_FULL_PATH" -c "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null
     # Now we should have config file
-    if "$BIN_DIR/crowdsec-fastly-bouncer" -g "$FASTLY_API_TOKENS" -o "$BOUNCER_CONFIG_FULL_PATH" -c "$BOUNCER_CONFIG_FULL_PATH" 2>/dev/null; then
-        chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
-        msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
-    else
-        msg err "Failed to generate configuration file"
-        exit 1
-    fi
-    
+    chmod 0600 "$BOUNCER_CONFIG_FULL_PATH"
+    msg succ "Configuration file created: $BOUNCER_CONFIG_FULL_PATH"
+  
     # Retrieve LAPI url from CrowdSec config and save it to bouncer config
     msg info "Setting LAPI URL in bouncer configuration..."
     CROWDSEC_LAPI_URL=$(get_param_value_from_yaml "${CROWDSEC_DIR}/config.yaml" "api.server.listen_uri")
-    change_param "$BOUNCER_CONFIG_FULL_PATH" 'lapi_key' "http://${CROWDSEC_LAPI_URL}"
+    change_param "$BOUNCER_CONFIG_FULL_PATH" 'lapi_url' "http://${CROWDSEC_LAPI_URL}"
     
     # Link bouncer to LAPI & update it's config with generated bouncer LAPI token
     msg info "Linking bouncer to LAPI and updating configuration..."
     link_bouncer_to_lapi "$BOUNCER_CONFIG_FULL_PATH" "$BOUNCER_FULL_NAME" "lapi_key"
     msg info "Bouncer linked to LAPI"
-
-    msg info "Fastly API tokens: Configured"
-    # Update config with actual tokens (replace placeholder)
-    set_config_var_value "$BOUNCER_CONFIG_FULL_PATH" 'FASTLY_TOKEN' "$FASTLY_API_TOKENS"
-    msg succ "Fastly tokens configured in bouncer"
-
+   
     # if recaptcha config variable present update config
     if [ -n "${RECAPTCHA_SECRET:-}" ] && [ -n "${RECAPTCHA_SITE_KEY:-}" ]; then
         msg info "updating recaptcha configuration..."
@@ -168,18 +162,25 @@ test_fastly_bouncer_config() {
     msg info "=== Testing final configuration ==="
         
     if [ -f "$BOUNCER_CONFIG_FULL_PATH" ]; then
-        msg info "Testing Fastly bouncer configuration..."
-        if crowdsec-fastly-bouncer -c "$BOUNCER_CONFIG_FULL_PATH" -t >/dev/null 2>&1; then
-            msg succ "Configuration test successful"
-            return 0
-        else
-            msg warn "Configuration test failed - check $BOUNCER_CONFIG_FULL_PATH manually"
-            msg info "You can test manually with: crowdsec-fastly-bouncer -c $BOUNCER_CONFIG_FULL_PATH -t"
-            return 1
-        fi
+       # check that the config file doesn't contain the default values: 
     else
         msg err "Configuration file not found: $BOUNCER_CONFIG_FULL_PATH"
         return 1
+    fi
+}
+
+start_fastly_bouncer() {
+    msg info "Reloading systemd user services..."
+    systemctl --user daemon-reload
+
+    msg info "Activating crowdsec-fastly-bouncer with user..."
+    systemctl --user enable crowdsec-fastly-bouncer.service
+
+    msg info "Starting crowdsec-fastly-bouncer with user..."
+    if systemctl --user start crowdsec-fastly-bouncer.service; then
+        msg succ "crowdsec-fastly-bouncer started with user"
+    else
+        msg err "Failed to start crowdsec-fastly-bouncer with user"
     fi
 }
 

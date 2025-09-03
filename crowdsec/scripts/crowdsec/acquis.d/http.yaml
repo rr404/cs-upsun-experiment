@@ -3,7 +3,7 @@ listen_addr: 127.0.0.1:8888
 path: /
 auth_type: headers
 headers:
-    cslogfw: totoIsNotDead
+    cslogfw: upsunIntegration
 labels:
   type: upsun-httplog
 log_level: trace

@@ -161,7 +161,7 @@ link_bouncer_to_lapi() {
         msg succ "API Key successfully created"
         msg info "Saving API Key to bouncer configuration file"
         msg info $(cat $bouncer_config_fullpath)
-        change_param $bouncer_config_fullpath "$api_key_param_name" "$api_key"
+        change_param $bouncer_config_fullpath $api_key_param_name $api_key
     else
         msg err "Failed to register bouncer with CrowdSec"
         return 1        
